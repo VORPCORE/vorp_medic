@@ -342,31 +342,39 @@ local function OpenMedicMenu()
     end)
 end
 
+local function playAnimation(dict, anim)
+    local ped <const> = PlayerPedId()
+    if not HasAnimDictLoaded(dict) then
+        RequestAnimDict(dict)
+        repeat Wait(0) until HasAnimDictLoaded(dict)
+    end
+    TaskPlayAnim(ped, dict, anim, 8.0, 8.0, 2000, 1, 0, false, false, false)
+end
+
 RegisterNetEvent("vorp_medic:Client:OpenMedicMenu", function()
     OpenMedicMenu()
 end)
 
-
--- vorp_medic:Client:HealAnim"
 RegisterNetEvent("vorp_medic:Client:HealAnim", function()
-    -- for doctor animation
-end)
-RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
-    -- for player animation
-    if health and health > 0 then
-        local oldHealth = GetEntityHealth(PlayerPedId())
-        local newHealth = oldHealth + health
-        SetEntityHealth(PlayerPedId(), newHealth, 0)
-    end
-    if stamina and stamina > 0 then
-        local oldStamina = GetPlayerStamina(PlayerId())
-        local newStamina = oldStamina + stamina
-        SetPlayerStamina(PlayerId(), newStamina)
-    end
+    playAnimation("script_mp@player@healing", "healing_male")
 end)
 
 RegisterNetEvent("vorp_medic:Client:ReviveAnim", function()
-    -- for revive animation
+    playAnimation("mech_revive@unapproved", "revive")
+end)
+
+RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
+    if health and health > 0 then
+        local oldHealth <const> = GetEntityHealth(PlayerPedId())
+        local newHealth = oldHealth + health
+        SetEntityHealth(PlayerPedId(), newHealth, 0)
+    end
+
+    if stamina and stamina > 0 then
+        local oldStamina <const> = GetPlayerStamina(PlayerId())
+        local newStamina         = oldStamina + stamina
+        SetPlayerStamina(PlayerId(), newStamina)
+    end
 end)
 
 RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
@@ -381,7 +389,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     AddPointToGpsMultiRoute(targetCoords.x, targetCoords.y, targetCoords.z, false)
     SetGpsMultiRouteRender(true)
 
-    repeat Wait(1000) until #(GetEntityCoords(PlayerPedId()) - targetCoords) < 5.0 or blip == 0
+    repeat Wait(1000) until #(GetEntityCoords(PlayerPedId()) - targetCoords) < 15.0 or blip == 0
 
     RemoveBlip(blip)
     blip = 0
