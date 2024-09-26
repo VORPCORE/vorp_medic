@@ -123,7 +123,7 @@ local function Handle()
 
                 if UiPromptHasStandardModeCompleted(prompt, 0) then
                     local job <const> = LocalPlayer.state.Character.Job
-                    if Config.SheriffJobs[job] then
+                    if Config.MedicJobs[job] then
                         OpenSheriffMenu()
                     else
                         Core.NotifyObjective(T.Error.OnlyDoctorOpenMenu, 5000)
