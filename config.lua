@@ -36,45 +36,49 @@ Config.DoctorJobs        = {
 Config.ShareStorage      = true
 
 -- storage locations
---check the server.lua for webhook url location line 19 in server.lua
+--check the server.lua for webhook url location line 21 in server.lua
 Config.Storage           = {
 
     Valentine = {
-        Name = "Storage",
+        Name = "Medical storage",
         Limit = 1000,
         Coords = vector3(-288.74, 808.77, 119.44),
     },
     Strawberry = {
-        Name = "Storage",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(-1811.868, -353.766, 163.649),
+        Coords = vector3(-1803.33, -432.59, 158.83),
     },
     Blackwater = {
-        Name = "Armoury",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(-766.4104, -1271.5747, 44.0613),
+        Coords = vector3(-833.15, -1269.5, 43.69),
     },
     Rhodes = {
-        Name = "Armoury",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(1361.552, -1303.204, 76.767),
+        Coords = vector3(1371.96, -1305.42, 77.97),
 
     },
     SaintDenis = {
-        Name = "Armoury",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(2507.538, -1301.395, 47.953),
+        Coords = vector3(2722.86, -1228.6, 50.37),
 
     },
     Tumbleweed = {
-        Name = "Armoury",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(-5526.896, -2928.556, -2.360),
+        Coords = vector3(-5533.5, -2944.19, -1.68),
     },
     Annesburg = {
-        Name = "Armoury",
+        Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(2909.674, 1309.006, 43.938),
+        Coords = vector3(2927.08, 1353.72, 44.74),
+    },
+    Armadillo = {
+        Name = "Medical storage",
+        Coords = vector3(-3657.81, -2602.66, -13.29),
     },
 }
 
@@ -90,29 +94,33 @@ Config.Teleports         = {
     },
     Strawberry = {
         Name = "Strawberry",
-        Coords = vector3(-1811.868, -353.766, 163.649),
+        Coords = vector3(-1793.37, -422.81, 155.97),
     },
     Blackwater = {
         Name = "Blackwater",
-        Coords = vector3(-766.4104, -1271.5747, 44.0613),
+        Coords = vector3(-853.9, -1277.13, 43.32),
     },
     Rhodes = {
         Name = "Rhodes",
-        Coords = vector3(1361.552, -1303.204, 76.767),
+        Coords = vector3(1372.79, -1313.25, 77.24),
 
     },
     SaintDenis = {
         Name = "Saint Denis",
-        Coords = vector3(2507.538, -1301.395, 47.953),
+        Coords =vector3(2723.1, -1238.92, 49.95),
 
     },
     Tumbleweed = {
         Name = "Tumbleweed",
-        Coords = vector3(-5526.896, -2928.556, -2.360),
+        Coords = vector3(-5518.78, -2949.74, -1.73),
     },
     Annesburg = {
         Name = "Annesburg",
-        Coords = vector3(2909.674, 1309.006, 43.938),
+        Coords = vector3(2926.08, 1342.24, 44.1),
+    },
+    Armadillo = {
+        Name = "Armadillo",
+        Coords = vector3(-3669.97, -2604.21, -13.71),
     },
 }
 
@@ -129,54 +137,58 @@ Config.AlertBlips        = {
     Sprite = "blip_mp_travelling_saleswoman",
 }
 
-
 -- doctor stations  boss menu locations
 Config.Stations = {
 
     Valentine = {
         Name = "Valentine doctor",
-        Coords = vector3(-286.65, 815.05, 119.44),
+        Coords = vector3(-288.82, 808.44, 119.43), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
     Strawberry = {
         Name = "Strawberry doctor",
-        Coords = vector3(-1811.868, -353.766, 163.649),
+        Coords = vector3(-1807.87, -430.77, 158.83), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
     Blackwater = {
         Name = "Blackwater doctor",
-        Coords = vector3(-766.4104, -1271.5747, 44.0613),
+        Coords = vector3(-833.81, -1264.22, 43.69), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
     Rhodes = {
         Name = "Rhodes doctor",
-        Coords = vector3(1361.552, -1303.204, 76.767),
+        Coords = vector3(1368.21, -1307.35, 78.02), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
     SaintDenis = {
         Name = "Saint Denis doctor",
-        Coords = vector3(2507.538, -1301.395, 47.953),
+        Coords = vector3(2721.29, -1233.11, 50.37), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
-    Tumbleweed = {
-        Name = "Tumbleweed doctor",
-        Coords = vector3(-5526.896, -2928.556, -2.360),
+    Armadillo = {
+        Name = "Armadillo doctor",
+        Coords = vector3(-3661.75, -2600.83, -13.29), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
     Annesburg = {
         Name = "Annesburg doctor",
-        Coords = vector3(2909.674, 1309.006, 43.938),
+        Coords = vector3(2925.92, 1350.49, 44.85), 
+        Teleports = Config.Teleports,
+        Storage = Config.Storage,
+    },
+    Tumbleweed = {
+        Name = "Tumbleweed doctor",
+        Coords = vector3(-5528.09, -2953.05, -0.7), 
         Teleports = Config.Teleports,
         Storage = Config.Storage,
     },
 }
-
 -- usable items
 Config.Items    = {
     bandage = {      -- item name

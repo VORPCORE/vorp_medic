@@ -88,7 +88,7 @@ local function Handle()
                                 if not isAnyPlayerClose then
                                     TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
                                 else
-                                    Core.NotifyObjective(T.Error.Playernearby, 5000)
+                                    Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000) 
                                 end
                             end
                         end
@@ -113,7 +113,6 @@ local function Handle()
                 end
             end
 
-
             local distanceStation <const> = #(coords - value.Coords)
             if distanceStation < 2.0 then
                 sleep = 0
@@ -124,9 +123,10 @@ local function Handle()
                 if UiPromptHasStandardModeCompleted(prompt, 0) then
                     local job <const> = LocalPlayer.state.Character.Job
                     if Config.MedicJobs[job] then
-                        OpenSheriffMenu()
+
+                        OpenDoctorMenu()
                     else
-                        Core.NotifyObjective(T.Error.OnlyDoctorOpenMenu, 5000)
+                        Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000) 
                     end
                 end
             end
@@ -160,7 +160,7 @@ CreateThread(function()
     end
 end)
 
-function OpenSheriffMenu()
+function OpenDoctorMenu()
     MenuData.CloseAll()
     local elements <const> = {
         {
@@ -175,8 +175,8 @@ function OpenSheriffMenu()
         }
     }
 
-    MenuData.Open("default", GetCurrentResourceName(), "OpenSheriffMenu", {
-        title = T.Menu.SheriffMenu,
+    MenuData.Open("default", GetCurrentResourceName(), "OpenDoctorMenu", {
+        title = T.Menu.DoctorMenu,
         subtext = T.Menu.HireFireMenu,
         align = Config.Align,
         elements = elements,
@@ -223,7 +223,7 @@ function OpenHireMenu()
         subtext = T.Menu.SubMenu,
         elements = elements,
         align = Config.Align,
-        lastmenu = "OpenSheriffMenu"
+        lastmenu = "OpenDoctorMenu"
 
     }, function(data, menu)
         if (data.current == "backup") then
@@ -383,7 +383,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     blip = BlipAddForCoords(Config.Blips.Style, targetCoords.x, targetCoords.y, targetCoords.z)
     SetBlipSprite(blip, Config.Blips.Sprite)
     BlipAddModifier(blip, Config.Blips.Color)
-    SetBlipName(blip, "player alert")
+    SetBlipName(blip,T.Alert.playeralert)
 
     StartGpsMultiRoute(joaat("COLOR_RED"), true, true)
     AddPointToGpsMultiRoute(targetCoords.x, targetCoords.y, targetCoords.z, false)
@@ -394,7 +394,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     RemoveBlip(blip)
     blip = 0
     ClearGpsMultiRoute()
-    Core.NotifyObjective("you have arrived to the location", 5000)
+    Core.NotifyObjective(T.Alert.ArrivedAtLocation, 5000) 
 end)
 
 

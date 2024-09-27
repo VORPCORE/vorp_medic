@@ -267,12 +267,12 @@ CreateThread(function()
             Inv:subItem(_source, key, 1)
             if value.revive then
                 local closestPlayer <const> = getClosestPlayer(_source)
-                if not closestPlayer then return Core.NotifyObjective(_source, "no player close to you to revive", 5000) end
+                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end 
                 Core.Player.Revive(tonumber(closestPlayer))
                 TriggerClientEvent("vorp_medic:Client:ReviveAnim", _source)
             else
                 local closestPlayer <const> = getClosestPlayer(_source)
-                if not closestPlayer then return Core.NotifyObjective(_source, "no player close to you to revive", 5000) end
+                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end 
                 TriggerClientEvent("vorp_medic:Client:HealAnim", _source)
                 TriggerClientEvent("vorp_medic:Client:HealPlayer", tonumber(closestPlayer), value.health, value.stamina)
             end
@@ -304,17 +304,18 @@ end
 
 RegisterCommand("alertDoctor", function(source, args)
     if PlayersAlerts[source] then
-        return Core.NotifyObjective(source, "You already alerted the doctors to cancel it do /cancelalert", 5000)
+        return Core.NotifyObjective(source, T.Error.AlreadyAlertedDoctors, 5000) 
     end
 
     if not next(JobsToAlert) then
-        return Core.NotifyObjective(source, "No one to receive alert at this moment", 5000)
+        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000) 
     end
 
     if Config.AllowOnlyDeadToAlert then
         local Character = Core.getUser(source).getUsedCharacter
         local dead      = Character.isdead
-        if not dead then return Core.NotifyObjective(source, "You are not dead to alert doctors", 5000) end
+        if not dead then return Core.NotifyObjective(source, T.Error.NotDeadCantAlert, 5000) 
+        end
     end
 
     local sourcePlayer <const> = GetPlayerPed(source)
@@ -336,29 +337,29 @@ RegisterCommand("alertDoctor", function(source, args)
     end
 
     if not closestDoctor then
-        return Core.NotifyObjective(source, "No doctors available at this moment", 5000)
+        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000) 
     end
 
-    Core.NotifyObjective(closestDoctor, "Player needs help look in the map to see location", 5000)
+    Core.NotifyObjective(closestDoctor, T.Alert.PlayerNeedsHelp, 5000) 
     TriggerClientEvent("vorp_medic:Client:AlertDoctor", closestDoctor, sourceCoords)
-    Core.NotifyObjective(source, "Doctors have been alerted", 5000)
+    Core.NotifyObjective(source, T.Alert.DoctorsAlerted, 5000) 
     PlayersAlerts[source] = closestDoctor
 end, false)
 
 --cancel alert for players
 RegisterCommand("cancelalert", function(source, args)
     if not PlayersAlerts[source] then
-        return Core.NotifyObjective(source, "You have not alerted the doctors", 5000)
+        return Core.NotifyObjective(source, T.Error.NoAlertToCancel, 5000) 
     end
 
     local isOnCall <const>, doctor <const> = isDoctorOnCall(source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
-        Core.NotifyObjective(doctor, "Player has canceled the alert", 5000)
+        Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000) 
     end
 
     PlayersAlerts[source] = nil
-    Core.NotifyObjective(source, "You have canceled the alert", 5000)
+    Core.NotifyObjective(source, T.Alert.AlertCanceled, 5000) 
 end, false)
 
 
@@ -368,29 +369,28 @@ RegisterCommand("finishAlert", function(source, args)
 
     local hasJobs <const> = hasJob(Core.getUser(_source))
     if not hasJobs then
-        return Core.NotifyObjective(_source, "You are not a doctor to use this command", 5000)
+        return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000) 
     end
 
     local isDuty <const> = isOnDuty(_source)
     if not isDuty then
-        return Core.NotifyObjective(_source, "You are not on duty to finish an alert", 5000)
+        return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000) 
     end
 
     local isOnCall <const>, doctor <const> = isDoctorOnCall(_source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", _source)
-        Core.NotifyObjective(_source, "you have canceled the alert", 5000)
+        Core.NotifyObjective(_source, T.Alert.AlertCanceled, 5000) 
     else
-        Core.NotifyObjective(_source, "You are not on call to cancel an alert", 5000)
+        Core.NotifyObjective(_source, T.Error.NotOnCall, 5000) 
     end
 
     local player <const> = getPlayerFromCall(_source)
     if player > 0 then
-        Core.NotifyObjective(player, "Doctor has canceled the alert", 5000)
+        Core.NotifyObjective(player, T.Alert.AlertCanceledByDoctor, 5000) 
         PlayersAlerts[player] = nil
     end
 end, false)
-
 
 
 --* ON PLAYER DROP
@@ -408,7 +408,7 @@ AddEventHandler("playerDropped", function()
     local isOnCall <const>, doctor <const> = isDoctorOnCall(_source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
-        Core.NotifyObjective(doctor, "Player has disconnected call canceled", 5000)
+        Core.NotifyObjective(doctor, T.Alert.PlayerDisconnectedAlertCanceled, 5000) 
     end
 
     if PlayersAlerts[_source] then
