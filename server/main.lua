@@ -302,7 +302,7 @@ local function getPlayerFromCall(source)
     return 0
 end
 
-RegisterCommand("alertDoctor", function(source, args)
+RegisterCommand(Config.AlertDoctorCommand, function(source, args)
     if PlayersAlerts[source] then
         return Core.NotifyObjective(source, T.Error.AlreadyAlertedDoctors, 5000) 
     end
