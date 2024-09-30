@@ -394,8 +394,11 @@ RegisterCommand(Config.cancelalert, function(source, args)
 
     local doctor <const> = getDoctorFromCall(source)
     if doctor > 0 then
-        TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
-        Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000)
+        local user = Core.getUser(doctor) -- make sure is still in game
+        if user then
+            TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
+            Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000)
+        end
     end
 
     PlayersAlerts[source] = nil
