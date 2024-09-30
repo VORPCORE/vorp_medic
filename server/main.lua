@@ -56,7 +56,7 @@ local function getClosestPlayer(source)
     local ent <const> = GetPlayerPed(source)
     local doctorCoords <const> = GetEntityCoords(ent)
 
-    for index, value in ipairs(players) do
+    for _, value in ipairs(players) do
         if value ~= source then
             local targetCoords <const> = GetEntityCoords(GetPlayerPed(value))
             local distance <const> = #(doctorCoords - targetCoords)
@@ -79,10 +79,10 @@ end
 --* OPEN STORAGE
 RegisterNetEvent("vorp_medic:Server:OpenStorage", function(key)
     local _source <const> = source
-    local User <const> = Core.getUser(_source)
-    if not User then return end
+    local user <const> = Core.getUser(_source)
+    if not user then return end
 
-    if not hasJob(User) then
+    if not hasJob(user) then
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
 
@@ -105,7 +105,7 @@ end)
 AddEventHandler("onResourceStop", function(resource)
     if resource ~= GetCurrentResourceName() then return end
 
-    for key, value in pairs(Config.Storage) do
+    for key, _ in pairs(Config.Storage) do
         local prefix = "vorp_medic_storage_" .. key
         if Config.ShareStorage then
             prefix = "vorp_medic_storage"
