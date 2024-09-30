@@ -2,16 +2,16 @@ Config = {}
 
 Config.DevMode = true
 
-Config.Align = "top-left" -- menu alignment
+Config.Align = "top-left"                 -- menu alignment
 
-Config.Lang = "English" -- language you want to use please make sure its in the translation.lua
+Config.Lang = "English"                   -- language you want to use please make sure its in the translation.lua
 
-Config.AllowOnlyDeadToAlert = true -- if true only dead players can alert doctors
+Config.AllowOnlyDeadToAlert = true        -- if true only dead players can alert doctors
 
-Config.AlertDoctorCommand = "alertDoctor"   -- command to alert doctors
-Config.cancelalert = "cancelpolicealert"    -- command to cancel alert
-Config.finishalert = "finishpolicelert"     -- command to finish alert
-Config.DoctorMenuCommand = 'doctormenu'     -- Command to go on duty and teleport
+Config.AlertDoctorCommand = "alertDoctor" -- command to alert doctors
+Config.cancelalert = "cancelpolicealert"  -- command to cancel alert
+Config.finishalert = "finishpolicelert"   -- command to finish alert
+Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
 
 -- add any job names here
 Config.MedicJobs = {
@@ -192,22 +192,26 @@ Config.Stations = {
         Storage = Config.Storage
     }
 }
+
 -- usable items
 Config.Items = {
-    bandage = { -- item name
-        health = 50, -- health to add
-        stamina = 0, -- stamina to add
-        revive = false
+    bandage = {              -- item name
+        health = 50,         -- health to add
+        stamina = 100,       -- stamina to add
+        revive = false,      -- if true will revive player,
+        mustBeOnDuty = false -- if true player must be on duty to use this item /have the job
     },
     potion = {
         health = 100,
         stamina = 0,
-        revive = false
+        revive = false,
+        mustBeOnDuty = false
     },
     syringe = {
         health = 0,
         stamina = 0,
-        revive = true
+        revive = true,
+        mustBeOnDuty = true
     }
 
 }

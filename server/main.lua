@@ -284,19 +284,19 @@ CreateThread(function()
             local _source <const> = data.source
             Inv:closeInventory(_source)
 
-            if not hasJob(user) then
-                return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
-            end
-
-            if not isOnDuty(_source) then
-                return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000)
+            if value.mustBeOnDuty then
+                if not isOnDuty(_source) then
+                    return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000)
+                end
             end
 
             if value.revive then
                 local closestPlayer <const> = getClosestPlayer(_source)
                 if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
-                Core.Player.Revive(tonumber(closestPlayer))
                 TriggerClientEvent("vorp_medic:Client:ReviveAnim", _source)
+                SetTimeout(3000, function()
+                    Core.Player.Revive(tonumber(closestPlayer))
+                end)
             else
                 local closestPlayer <const> = getClosestPlayer(_source)
                 if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
