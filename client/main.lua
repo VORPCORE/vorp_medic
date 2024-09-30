@@ -10,6 +10,10 @@ AddEventHandler("onResourceStop", function(resource)
     for key, value in pairs(Config.Stations) do
         RemoveBlip(value.BlipHandle)
     end
+    -- remove blip
+    if blip ~= 0 then
+        RemoveBlip(blip)
+    end
 end)
 
 local function getClosestPlayer()
@@ -88,7 +92,7 @@ local function Handle()
                                 if not isAnyPlayerClose then
                                     TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
                                 else
-                                    Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000) 
+                                    Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
                                 end
                             end
                         end
@@ -123,10 +127,9 @@ local function Handle()
                 if UiPromptHasStandardModeCompleted(prompt, 0) then
                     local job <const> = LocalPlayer.state.Character.Job
                     if Config.MedicJobs[job] then
-
                         OpenDoctorMenu()
                     else
-                        Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000) 
+                        Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                     end
                 end
             end
@@ -383,18 +386,19 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     blip = BlipAddForCoords(Config.Blips.Style, targetCoords.x, targetCoords.y, targetCoords.z)
     SetBlipSprite(blip, Config.Blips.Sprite)
     BlipAddModifier(blip, Config.Blips.Color)
-    SetBlipName(blip,T.Alert.playeralert)
+    SetBlipName(blip, T.Alert.playeralert)
 
     StartGpsMultiRoute(joaat("COLOR_RED"), true, true)
     AddPointToGpsMultiRoute(targetCoords.x, targetCoords.y, targetCoords.z, false)
     SetGpsMultiRouteRender(true)
 
     repeat Wait(1000) until #(GetEntityCoords(PlayerPedId()) - targetCoords) < 15.0 or blip == 0
-
+    if blip ~= 0 then
+        Core.NotifyObjective(T.Alert.ArrivedAtLocation, 5000)
+    end
     RemoveBlip(blip)
     blip = 0
     ClearGpsMultiRoute()
-    Core.NotifyObjective(T.Alert.ArrivedAtLocation, 5000) 
 end)
 
 

@@ -325,6 +325,12 @@ local function isDoctorOnCall(source)
     return false, 0
 end
 
+local function getDoctorFromCall(source)
+    if PlayersAlerts[source] then
+        return PlayersAlerts[source]
+    end
+end
+
 local function getPlayerFromCall(source)
     for key, value in pairs(PlayersAlerts) do
         if value == source then
@@ -336,11 +342,11 @@ end
 
 RegisterCommand(Config.AlertDoctorCommand, function(source, args)
     if PlayersAlerts[source] then
-        return Core.NotifyObjective(source, T.Error.AlreadyAlertedDoctors, 5000)
+        return Core.NotifyRightTip(source, T.Error.AlreadyAlertedDoctors, 5000)
     end
 
     if not next(JobsToAlert) then
-        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000)
+        return Core.NotifyRightTip(source, T.Error.NoDoctorsAvailable, 5000)
     end
 
     if Config.AllowOnlyDeadToAlert then
@@ -370,29 +376,29 @@ RegisterCommand(Config.AlertDoctorCommand, function(source, args)
     end
 
     if not closestDoctor then
-        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000)
+        return Core.NotifyRightTip(source, T.Error.NoDoctorsAvailable, 5000)
     end
 
     Core.NotifyObjective(closestDoctor, T.Alert.PlayerNeedsHelp, 5000)
     TriggerClientEvent("vorp_medic:Client:AlertDoctor", closestDoctor, sourceCoords)
-    Core.NotifyObjective(source, T.Alert.DoctorsAlerted, 5000)
+    Core.NotifyRightTip(source, T.Alert.DoctorsAlerted, 5000)
     PlayersAlerts[source] = closestDoctor
 end, false)
 
 --cancel alert for players
 RegisterCommand(Config.cancelalert, function(source, args)
     if not PlayersAlerts[source] then
-        return Core.NotifyObjective(source, T.Error.NoAlertToCancel, 5000)
+        return Core.NotifyRightTip(source, T.Error.NoAlertToCancel, 5000)
     end
 
-    local isOnCall <const>, doctor <const> = isDoctorOnCall(source)
-    if isOnCall and doctor > 0 then
+    local doctor <const> = getDoctorFromCall(source)
+    if doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
         Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000)
     end
 
     PlayersAlerts[source] = nil
-    Core.NotifyObjective(source, T.Alert.AlertCanceled, 5000)
+    Core.NotifyRightTip(source, T.Alert.AlertCanceled, 5000)
 end, false)
 
 
@@ -420,7 +426,7 @@ RegisterCommand(Config.finishalert, function(source, args)
 
     local player <const> = getPlayerFromCall(_source)
     if player > 0 then
-        Core.NotifyObjective(player, T.Alert.AlertCanceledByDoctor, 5000)
+        Core.NotifyRightTip(player, T.Alert.AlertCanceledByDoctor, 5000)
         PlayersAlerts[player] = nil
     end
 end, false)
