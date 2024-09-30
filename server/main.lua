@@ -329,6 +329,7 @@ local function getDoctorFromCall(source)
     if PlayersAlerts[source] then
         return PlayersAlerts[source]
     end
+    return 0
 end
 
 local function getPlayerFromCall(source)
