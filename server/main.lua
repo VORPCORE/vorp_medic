@@ -68,16 +68,12 @@ local function getClosestPlayer(source)
     return nil
 end
 
-local function getSourceInfo(_source)
-	local user = Core.getUser(_source)
-	if not user then
-		return
-	end
-	local sourceCharacter = user.getUsedCharacter
-	local charname = sourceCharacter.firstname .. ' ' .. sourceCharacter.lastname
-	local sourceIdentifier = sourceCharacter.identifier
-	local steamname = GetPlayerName(_source)
-	return charname, sourceIdentifier, steamname
+local function getSourceInfo(user, _source)
+    local sourceCharacter <const> = user.getUsedCharacter
+    local charname <const> = sourceCharacter.firstname .. ' ' .. sourceCharacter.lastname
+    local sourceIdentifier <const> = sourceCharacter.identifier
+    local steamname <const> = GetPlayerName(_source)
+    return charname, sourceIdentifier, steamname
 end
 
 --* OPEN STORAGE
@@ -141,10 +137,10 @@ AddEventHandler("onResourceStart", function(resource)
     end
 end)
 
--- vorpCharSelect
+--* ON PLAYER SPAWN
 AddEventHandler("vorp:SelectedCharacter", function(source, char)
+    if Config.DevMode then return end
     if not Config.MedicJobs[char.job] then return end
-    -- add chat suggestion
     TriggerClientEvent("chat:addSuggestion", source, "/" .. Config.DoctorMenuCommand, T.Menu.OpenDoctorMenu, {})
     RegisterCommand(Config.DoctorMenuCommand, openDoctorMenu, false)
 end)
@@ -152,10 +148,10 @@ end)
 --* HIRE PLAYER
 RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
     local _source <const> = source
-    local User <const> = Core.getUser(_source)
-    if not User then return end
+    local user <const> = Core.getUser(_source)
+    if not user then return end
 
-    if not hasJob(User) then
+    if not hasJob(user) then
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
 
@@ -186,13 +182,13 @@ RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
     RegisterCommand(Config.DoctorMenuCommand, openDoctorMenu, false)
 
     TriggerClientEvent("vorp_medic:Client:JobUpdate", target)
-    local sourcename, identifier, steamname = getSourceInfo(_source)  
-    local targetname, identifier2, steamname2 = getSourceInfo(target)  
+    local sourcename <const>, identifier <const>, steamname <const> = getSourceInfo(user, _source)
+    local targetname <const>, identifier2 <const>, steamname2 <const> = getSourceInfo(targetUser, target)
 
-    local description = "**"..Logs.Lang.HiredBy.."** " .. sourcename .. "\n".."** "..Logs.Lang.Steam.. "** "..steamname .. "\n".."** "..Logs.Lang.Identifier .."** ".. identifier .. "\n" .."** "..Logs.Lang.PlayerID .."** " .._source..
-    "\n\n**"..Logs.Lang.Job.."** " .. label .. "\n\n" ..
-    "**"..Logs.Lang.HiredPlayer.."** " .. targetname .. "\n".."** " ..Logs.Lang.Steam.. "** "..steamname2 .. "\n".."** "..Logs.Lang.Identifier.."** " .. identifier2 .. "\n" 
-    .."** "..Logs.Lang.PlayerID .."** ".. _source
+    local description <const> = "**" .. Logs.Lang.HiredBy .. "** " .. sourcename .. "\n" .. "** " .. Logs.Lang.Steam .. "** " .. steamname .. "\n" .. "** "
+        .. Logs.Lang.Identifier .. "** " .. identifier .. "\n" .. "** " .. Logs.Lang.PlayerID .. "** " .. _source .. "\n\n**" .. Logs.Lang.Job .. "** " .. label .. "\n\n" ..
+        "**" .. Logs.Lang.HiredPlayer .. "** " .. targetname .. "\n" .. "** " .. Logs.Lang.Steam .. "** " .. steamname2 .. "\n" .. "** "
+        .. Logs.Lang.Identifier .. "** " .. identifier2 .. "\n" .. "** " .. Logs.Lang.PlayerID .. "** " .. _source
     Core.AddWebhook(Logs.Lang.JobHired, Logs.Webhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.avatar)
 end)
 
@@ -227,13 +223,11 @@ RegisterNetEvent("vorp_medic:server:firePlayer", function(id)
     end
 
     TriggerClientEvent("vorp_medic:Client:JobUpdate", target)
-    local sourcename, identifier, steamname = getSourceInfo(_source)  
-    local targetname, identifier2, steamname2 = getSourceInfo(target)  
+    local sourcename <const>, identifier <const>, steamname <const> = getSourceInfo(user, _source)
+    local targetname <const>, identifier2 <const>, steamname2 <const> = getSourceInfo(targetUser, target)
 
-    local description = "**"..Logs.Lang.FiredBy.."** " .. sourcename .. "\n".."** "..Logs.Lang.Steam.. "** "..steamname .. "\n".."** "..Logs.Lang.Identifier .."** ".. identifier .. "\n" .."** "..Logs.Lang.PlayerID .."** " .._source..
-    "\n\n**"..Logs.Lang.FromJob.."** " .. targetJob .. "\n\n" ..
-    "**"..Logs.Lang.FiredPlayer.."** " .. targetname .. "\n".."** " ..Logs.Lang.Steam.. "** "..steamname2 .. "\n".."** "..Logs.Lang.Identifier.."** " .. identifier2 .. "\n" 
-    .."** "..Logs.Lang.PlayerID .."** ".. target
+    local description <const> = "**" .. Logs.Lang.FiredBy .. "** " .. sourcename .. "\n" .. "** " .. Logs.Lang.Steam .. "** " .. steamname .. "\n" .. "** " .. Logs.Lang.Identifier .. "** " .. identifier .. "\n" .. "** " .. Logs.Lang.PlayerID .. "** " .. _source ..
+        "\n\n**" .. Logs.Lang.FromJob .. "** " .. targetJob .. "\n\n" .. "**" .. Logs.Lang.FiredPlayer .. "** " .. targetname .. "\n" .. "** " .. Logs.Lang.Steam .. "** " .. steamname2 .. "\n" .. "** " .. Logs.Lang.Identifier .. "** " .. identifier2 .. "\n" .. "** " .. Logs.Lang.PlayerID .. "** " .. target
     Core.AddWebhook(Logs.Lang.Jobfired, Logs.Webhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.avatar)
 end)
 
@@ -248,14 +242,14 @@ Core.Callback.Register("vorp_medic:server:checkDuty", function(source, CB, args)
         return CB(false)
     end
 
-    local sourcename, identifier, steamname = getSourceInfo(source)
+    local sourcename <const>, identifier <const>, steamname <const> = getSourceInfo(user, source)
     local Character <const> = user.getUsedCharacter
     local Job <const> = Character.job
-    local description = "**"..Logs.Lang.Steam.."** "..steamname .. "\n" ..
-                        "**"..Logs.Lang.Identifier.."** "..identifier .. "\n" ..
-                        "**"..Logs.Lang.PlayerID.."** "..source.."\n" ..
-                        "**"..Logs.Lang.Job.."** "..Job.."\n" ..
-                        "**"..Logs.Lang.PlayerName.."** "..sourcename.."\n"
+    local description = "**" .. Logs.Lang.Steam .. "** " .. steamname .. "\n" ..
+        "**" .. Logs.Lang.Identifier .. "** " .. identifier .. "\n" ..
+        "**" .. Logs.Lang.PlayerID .. "** " .. source .. "\n" ..
+        "**" .. Logs.Lang.Job .. "** " .. Job .. "\n" ..
+        "**" .. Logs.Lang.PlayerName .. "** " .. sourcename .. "\n"
 
     if not isOnDuty(source) then
         if not JobsToAlert[source] then
@@ -269,7 +263,7 @@ Core.Callback.Register("vorp_medic:server:checkDuty", function(source, CB, args)
         end
         Player(source).state:set('isMedicDuty', false, true)
 
-        description = description .. "**"..Logs.Lang.JobOffDuty.."**"
+        description = description .. "**" .. Logs.Lang.JobOffDuty .. "**"
         Core.AddWebhook(Logs.Lang.JobOffDuty, Logs.DutyWebhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.Avatar)
 
         return CB(false)
@@ -302,17 +296,15 @@ CreateThread(function()
             local hasItem <const> = Inv:getItem(_source, key)
             if not hasItem then return end
 
-            local item <const> = key
-
             Inv:subItem(_source, key, 1)
             if value.revive then
                 local closestPlayer <const> = getClosestPlayer(_source)
-                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end 
+                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
                 Core.Player.Revive(tonumber(closestPlayer))
                 TriggerClientEvent("vorp_medic:Client:ReviveAnim", _source)
             else
                 local closestPlayer <const> = getClosestPlayer(_source)
-                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end 
+                if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
                 TriggerClientEvent("vorp_medic:Client:HealAnim", _source)
                 TriggerClientEvent("vorp_medic:Client:HealPlayer", tonumber(closestPlayer), value.health, value.stamina)
             end
@@ -344,17 +336,18 @@ end
 
 RegisterCommand(Config.AlertDoctorCommand, function(source, args)
     if PlayersAlerts[source] then
-        return Core.NotifyObjective(source, T.Error.AlreadyAlertedDoctors, 5000) 
+        return Core.NotifyObjective(source, T.Error.AlreadyAlertedDoctors, 5000)
     end
 
     if not next(JobsToAlert) then
-        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000) 
+        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000)
     end
 
     if Config.AllowOnlyDeadToAlert then
-        local Character = Core.getUser(source).getUsedCharacter
-        local dead      = Character.isdead
-        if not dead then return Core.NotifyObjective(source, T.Error.NotDeadCantAlert, 5000) 
+        local Character <const> = Core.getUser(source).getUsedCharacter
+        local dead <const> = Character.isdead
+        if not dead then
+            return Core.NotifyObjective(source, T.Error.NotDeadCantAlert, 5000)
         end
     end
 
@@ -377,29 +370,29 @@ RegisterCommand(Config.AlertDoctorCommand, function(source, args)
     end
 
     if not closestDoctor then
-        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000) 
+        return Core.NotifyObjective(source, T.Error.NoDoctorsAvailable, 5000)
     end
 
-    Core.NotifyObjective(closestDoctor, T.Alert.PlayerNeedsHelp, 5000) 
+    Core.NotifyObjective(closestDoctor, T.Alert.PlayerNeedsHelp, 5000)
     TriggerClientEvent("vorp_medic:Client:AlertDoctor", closestDoctor, sourceCoords)
-    Core.NotifyObjective(source, T.Alert.DoctorsAlerted, 5000) 
+    Core.NotifyObjective(source, T.Alert.DoctorsAlerted, 5000)
     PlayersAlerts[source] = closestDoctor
 end, false)
 
 --cancel alert for players
 RegisterCommand(Config.cancelalert, function(source, args)
     if not PlayersAlerts[source] then
-        return Core.NotifyObjective(source, T.Error.NoAlertToCancel, 5000) 
+        return Core.NotifyObjective(source, T.Error.NoAlertToCancel, 5000)
     end
 
     local isOnCall <const>, doctor <const> = isDoctorOnCall(source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
-        Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000) 
+        Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000)
     end
 
     PlayersAlerts[source] = nil
-    Core.NotifyObjective(source, T.Alert.AlertCanceled, 5000) 
+    Core.NotifyObjective(source, T.Alert.AlertCanceled, 5000)
 end, false)
 
 
@@ -409,25 +402,25 @@ RegisterCommand(Config.finishalert, function(source, args)
 
     local hasJobs <const> = hasJob(Core.getUser(_source))
     if not hasJobs then
-        return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000) 
+        return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
 
     local isDuty <const> = isOnDuty(_source)
     if not isDuty then
-        return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000) 
+        return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000)
     end
 
     local isOnCall <const>, doctor <const> = isDoctorOnCall(_source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", _source)
-        Core.NotifyObjective(_source, T.Alert.AlertCanceled, 5000) 
+        Core.NotifyObjective(_source, T.Alert.AlertCanceled, 5000)
     else
-        Core.NotifyObjective(_source, T.Error.NotOnCall, 5000) 
+        Core.NotifyObjective(_source, T.Error.NotOnCall, 5000)
     end
 
     local player <const> = getPlayerFromCall(_source)
     if player > 0 then
-        Core.NotifyObjective(player, T.Alert.AlertCanceledByDoctor, 5000) 
+        Core.NotifyObjective(player, T.Alert.AlertCanceledByDoctor, 5000)
         PlayersAlerts[player] = nil
     end
 end, false)
@@ -448,7 +441,7 @@ AddEventHandler("playerDropped", function()
     local isOnCall <const>, doctor <const> = isDoctorOnCall(_source)
     if isOnCall and doctor > 0 then
         TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
-        Core.NotifyObjective(doctor, T.Alert.PlayerDisconnectedAlertCanceled, 5000) 
+        Core.NotifyObjective(doctor, T.Alert.PlayerDisconnectedAlertCanceled, 5000)
     end
 
     if PlayersAlerts[_source] then
