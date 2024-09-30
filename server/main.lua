@@ -18,7 +18,7 @@ local function registerStorage(prefix, name, limit)
             UsePermissions = false,
             UseBlackList = false,
             whitelistWeapons = false,
-            webhook = "" --Add webhook Url here
+            webhook = Logs.StorageWebook,
 
         }
         Inv:registerInventory(data)
@@ -68,6 +68,17 @@ local function getClosestPlayer(source)
     return nil
 end
 
+local function getSourceInfo(_source)
+	local user = Core.getUser(_source)
+	if not user then
+		return
+	end
+	local sourceCharacter = user.getUsedCharacter
+	local charname = sourceCharacter.firstname .. ' ' .. sourceCharacter.lastname
+	local sourceIdentifier = sourceCharacter.identifier
+	local steamname = GetPlayerName(_source)
+	return charname, sourceIdentifier, steamname
+end
 
 --* OPEN STORAGE
 RegisterNetEvent("vorp_medic:Server:OpenStorage", function(key)
@@ -175,6 +186,14 @@ RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
     RegisterCommand(Config.DoctorMenuCommand, openDoctorMenu, false)
 
     TriggerClientEvent("vorp_medic:Client:JobUpdate", target)
+    local sourcename, identifier, steamname = getSourceInfo(_source)  
+    local targetname, identifier2, steamname2 = getSourceInfo(target)  
+
+    local description = "**"..Logs.Lang.HiredBy.."** " .. sourcename .. "\n".."** "..Logs.Lang.Steam.. "** "..steamname .. "\n".."** "..Logs.Lang.Identifier .."** ".. identifier .. "\n" .."** "..Logs.Lang.PlayerID .."** " .._source..
+    "\n\n**"..Logs.Lang.Job.."** " .. label .. "\n\n" ..
+    "**"..Logs.Lang.HiredPlayer.."** " .. targetname .. "\n".."** " ..Logs.Lang.Steam.. "** "..steamname2 .. "\n".."** "..Logs.Lang.Identifier.."** " .. identifier2 .. "\n" 
+    .."** "..Logs.Lang.PlayerID .."** ".. _source
+    Core.AddWebhook(Logs.Lang.JobHired, Logs.Webhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.avatar)
 end)
 
 --* FIRE PLAYER
@@ -208,6 +227,14 @@ RegisterNetEvent("vorp_medic:server:firePlayer", function(id)
     end
 
     TriggerClientEvent("vorp_medic:Client:JobUpdate", target)
+    local sourcename, identifier, steamname = getSourceInfo(_source)  
+    local targetname, identifier2, steamname2 = getSourceInfo(target)  
+
+    local description = "**"..Logs.Lang.FiredBy.."** " .. sourcename .. "\n".."** "..Logs.Lang.Steam.. "** "..steamname .. "\n".."** "..Logs.Lang.Identifier .."** ".. identifier .. "\n" .."** "..Logs.Lang.PlayerID .."** " .._source..
+    "\n\n**"..Logs.Lang.FromJob.."** " .. targetJob .. "\n\n" ..
+    "**"..Logs.Lang.FiredPlayer.."** " .. targetname .. "\n".."** " ..Logs.Lang.Steam.. "** "..steamname2 .. "\n".."** "..Logs.Lang.Identifier.."** " .. identifier2 .. "\n" 
+    .."** "..Logs.Lang.PlayerID .."** ".. target
+    Core.AddWebhook(Logs.Lang.Jobfired, Logs.Webhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.avatar)
 end)
 
 
@@ -221,19 +248,32 @@ Core.Callback.Register("vorp_medic:server:checkDuty", function(source, CB, args)
         return CB(false)
     end
 
+    local sourcename, identifier, steamname = getSourceInfo(source)
+    local Character <const> = user.getUsedCharacter
+    local Job <const> = Character.job
+    local description = "**"..Logs.Lang.Steam.."** "..steamname .. "\n" ..
+                        "**"..Logs.Lang.Identifier.."** "..identifier .. "\n" ..
+                        "**"..Logs.Lang.PlayerID.."** "..source.."\n" ..
+                        "**"..Logs.Lang.Job.."** "..Job.."\n" ..
+                        "**"..Logs.Lang.PlayerName.."** "..sourcename.."\n"
+
     if not isOnDuty(source) then
         if not JobsToAlert[source] then
             JobsToAlert[source] = true
         end
         Player(source).state:set('isMedicDuty', true, true)
         return CB(true)
-    end
+    else
+        if JobsToAlert[source] then
+            JobsToAlert[source] = nil
+        end
+        Player(source).state:set('isMedicDuty', false, true)
 
-    if JobsToAlert[source] then
-        JobsToAlert[source] = nil
+        description = description .. "**"..Logs.Lang.JobOffDuty.."**"
+        Core.AddWebhook(Logs.Lang.JobOffDuty, Logs.DutyWebhook, description, Logs.color, Logs.Namelogs, Logs.logo, Logs.footerlogo, Logs.Avatar)
+
+        return CB(false)
     end
-    Player(source).state:set('isMedicDuty', false, true)
-    return CB(false)
 end)
 
 
@@ -347,7 +387,7 @@ RegisterCommand(Config.AlertDoctorCommand, function(source, args)
 end, false)
 
 --cancel alert for players
-RegisterCommand("cancelalert", function(source, args)
+RegisterCommand(Config.cancelalert, function(source, args)
     if not PlayersAlerts[source] then
         return Core.NotifyObjective(source, T.Error.NoAlertToCancel, 5000) 
     end
@@ -364,7 +404,7 @@ end, false)
 
 
 -- for doctors to finish alert
-RegisterCommand("finishAlert", function(source, args)
+RegisterCommand(Config.finishalert, function(source, args)
     local _source <const> = source
 
     local hasJobs <const> = hasJob(Core.getUser(_source))
