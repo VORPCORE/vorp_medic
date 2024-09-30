@@ -57,7 +57,7 @@ local function getClosestPlayer(source)
     local doctorCoords <const> = GetEntityCoords(ent)
 
     for _, value in ipairs(players) do
-        if value ~= source then
+        if tonumber(value) ~= source then
             local targetCoords <const> = GetEntityCoords(GetPlayerPed(value))
             local distance <const> = #(doctorCoords - targetCoords)
             if distance <= 3.0 then
@@ -280,10 +280,9 @@ end)
 
 CreateThread(function()
     for key, value in pairs(Config.Items) do
-        Inv:registerUsableItem(key, function()
-            local _source <const> = source
-            local user <const> = Core.getUser(_source)
-            if not user then return end
+        Inv:registerUsableItem(key, function(data)
+            local _source <const> = data.source
+            Inv:closeInventory(_source)
 
             if not hasJob(user) then
                 return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
@@ -293,10 +292,6 @@ CreateThread(function()
                 return Core.NotifyObjective(_source, T.Duty.YouAreNotOnDuty, 5000)
             end
 
-            local hasItem <const> = Inv:getItem(_source, key)
-            if not hasItem then return end
-
-            Inv:subItem(_source, key, 1)
             if value.revive then
                 local closestPlayer <const> = getClosestPlayer(_source)
                 if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
@@ -308,6 +303,8 @@ CreateThread(function()
                 TriggerClientEvent("vorp_medic:Client:HealAnim", _source)
                 TriggerClientEvent("vorp_medic:Client:HealPlayer", tonumber(closestPlayer), value.health, value.stamina)
             end
+
+            Inv:subItem(_source, key, 1)
         end)
     end
 end)
@@ -394,7 +391,7 @@ RegisterCommand(Config.cancelalert, function(source, args)
 
     local doctor <const> = getDoctorFromCall(source)
     if doctor > 0 then
-        local user = Core.getUser(doctor) -- make sure is still in game
+        local user <const> = Core.getUser(doctor) -- make sure is still in game
         if user then
             TriggerClientEvent("vorp_medic:Client:RemoveBlip", doctor)
             Core.NotifyObjective(doctor, T.Alert.AlertCanceledByPlayer, 5000)
