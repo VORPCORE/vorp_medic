@@ -17,12 +17,7 @@ Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
 Config.MedicJobs = {
     doctor = true,
     headdoctor = true,
-    StrDoctor = true,
-    StrMedic = true,
-    SDDoctor = true,
-    SDMedic = true,
-    ValDoctor = true,
-    ValMedic = true
+    
 }
 
 Config.Keys = { -- prompts
@@ -34,18 +29,13 @@ Config.JobLabels = {
     doctor = "Doctor",
     headdoctor = "Head Doctor",
     shaman = "Shaman",
-    ValDoctor = "Doctor",
-    SDDoctor = "Doctor",
-    StrDoctor = "Doctor"
+   
 }
 
 -- jobs that can open hire menu
 Config.DoctorJobs = {
     headdoctor = true,
-    ValDoctor = true,
-    SDDoctor = true,
-    StrDoctor = true
-
+  
 }
 
 -- if true storage for every doctor station will be shared if false they will be unique
