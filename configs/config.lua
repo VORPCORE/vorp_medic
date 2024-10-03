@@ -17,7 +17,8 @@ Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
 Config.MedicJobs = {
     doctor = true,
     headdoctor = true,
-    
+    shaman =  true,
+
 }
 
 Config.Keys = { -- prompts
