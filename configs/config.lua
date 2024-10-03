@@ -16,7 +16,13 @@ Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
 -- add any job names here
 Config.MedicJobs = {
     doctor = true,
-    headdoctor = true
+    headdoctor = true,
+    StrDoctor = true,
+    StrMedic = true,
+    SDDoctor = true,
+    SDMedic = true,
+    ValDoctor = true,
+    ValMedic = true
 }
 
 Config.Keys = { -- prompts
@@ -27,12 +33,19 @@ Config.Keys = { -- prompts
 Config.JobLabels = {
     doctor = "Doctor",
     headdoctor = "Head Doctor",
-    shaman = "Shaman"
+    shaman = "Shaman",
+    ValDoctor = "Doctor",
+    SDDoctor = "Doctor",
+    StrDoctor = "Doctor"
 }
 
 -- jobs that can open hire menu
 Config.DoctorJobs = {
-    headdoctor = true
+    headdoctor = true,
+    ValDoctor = true,
+    SDDoctor = true,
+    StrDoctor = true
+
 }
 
 -- if true storage for every doctor station will be shared if false they will be unique
@@ -59,6 +72,8 @@ Config.Storage = {
 
     },
 
+    -- add more locations here
+
 }
 
 -- if true players can use teleport from the doctor menu if false only from locations
@@ -81,7 +96,7 @@ Config.Teleports = {
 
     },
 
-
+    -- add more locations here
 }
 
 -- blips for stations
@@ -119,7 +134,7 @@ Config.Stations = {
         Storage = Config.Storage
     },
 
-
+    -- add more locations here
 }
 
 -- usable items
@@ -141,6 +156,6 @@ Config.Items = {
         stamina = 0,
         revive = true,
         mustBeOnDuty = true
-    }
+    },
 
 }
