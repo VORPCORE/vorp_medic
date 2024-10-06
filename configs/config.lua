@@ -8,7 +8,7 @@ Config.Lang = "English"                   -- language you want to use please mak
 
 Config.AllowOnlyDeadToAlert = true        -- if true only dead players can alert doctors
 
-Config.AlertDoctorCommand = "alertDoctor" -- command to alert doctors
+Config.AlertDoctorCommand = "calldoctor" -- command to alert doctors
 Config.cancelalert = "cancelDoctorAlert"  -- command to cancel alert
 Config.finishalert = "finishDoctorAlert"   -- command to finish alert
 Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
