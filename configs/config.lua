@@ -59,7 +59,7 @@ Config.Storage = {
     SaintDenis = {
         Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(2722.86, -1228.6, 50.37)
+        Coords = vector3(2733.1, -1230.26, 50.42)
 
     },
 
