@@ -368,15 +368,29 @@ end)
 
 RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
     if health and health > 0 then
-        local oldHealth <const> = GetEntityHealth(PlayerPedId())
-        local newHealth = oldHealth + health
-        SetEntityHealth(PlayerPedId(), newHealth, 0)
+        local inner = GetAttributeCoreValue(PlayerPedId(), 0)
+        local outter = GetPlayerHealth(PlayerId())
+
+        if inner > 99 then
+            local newHealth = outter + health
+            SetEntityHealth(PlayerPedId(), newHealth, 0)
+        else
+            local newHealth = inner + health
+            SetAttributeCoreValue(PlayerPedId(), 0, newHealth)
+        end
     end
 
     if stamina and stamina > 0 then
-        local oldStamina <const> = GetPlayerStamina(PlayerId())
-        local newStamina         = oldStamina + stamina
-        SetPlayerStamina(PlayerId(), newStamina)
+        local inner = GetAttributeCoreValue(PlayerPedId(), 1)
+        local outer = GetPlayerStamina(PlayerId())
+
+        if inner > 99 then
+            local newStamina = outer + stamina
+            ChangePedStamina(PlayerPedId(), newStamina)
+        else
+            local newStamina = outer + stamina
+            SetAttributeCoreValue(PlayerPedId(), 1, newStamina)
+        end
     end
 end)
 
