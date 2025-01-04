@@ -234,7 +234,7 @@ end)
 
 
 --* CHECK IF PLAYER IS ON DUTY
-Core.Callback.Register("vorp_medic:server:checkDuty", function(source, CB, args)
+Core.Callback.Register("vorp_medic:server:checkDuty", function(source, CB, _)
     local user <const> = Core.getUser(source)
     if not user then return end
 
@@ -273,7 +273,7 @@ end)
 
 
 --* ON PLAYER JOB CHANGE
-AddEventHandler("vorp:playerJobChange", function(source, new, old)
+AddEventHandler("vorp:playerJobChange", function(source, new, _)
     if not Config.MedicJobs[new] then return end
     TriggerClientEvent("vorp_medic:Client:JobUpdate", source)
 end)
@@ -304,7 +304,7 @@ CreateThread(function()
                 TriggerClientEvent("vorp_medic:Client:HealPlayer", tonumber(closestPlayer), value.health, value.stamina)
             end
 
-            Inv:subItem(_source, key, 1)
+            Inv:subItemById(_source, data.item.id)
         end)
     end
 end)
@@ -314,7 +314,7 @@ end)
 local function isDoctorOnCall(source)
     if not next(PlayersAlerts) then return false, 0 end
 
-    for key, value in pairs(PlayersAlerts) do
+    for _, value in pairs(PlayersAlerts) do
         if value == source then
             return true, value
         end
@@ -338,7 +338,7 @@ local function getPlayerFromCall(source)
     return 0
 end
 
-RegisterCommand(Config.AlertDoctorCommand, function(source, args)
+RegisterCommand(Config.AlertDoctorCommand, function(source)
     if PlayersAlerts[source] then
         return Core.NotifyRightTip(source, T.Error.AlreadyAlertedDoctors, 5000)
     end
@@ -384,7 +384,7 @@ RegisterCommand(Config.AlertDoctorCommand, function(source, args)
 end, false)
 
 --cancel alert for players
-RegisterCommand(Config.cancelalert, function(source, args)
+RegisterCommand(Config.cancelalert, function(source)
     if not PlayersAlerts[source] then
         return Core.NotifyRightTip(source, T.Error.NoAlertToCancel, 5000)
     end
@@ -404,7 +404,7 @@ end, false)
 
 
 -- for doctors to finish alert
-RegisterCommand(Config.finishalert, function(source, args)
+RegisterCommand(Config.finishalert, function(source)
     local _source <const> = source
 
     local hasJobs <const> = hasJob(Core.getUser(_source))
