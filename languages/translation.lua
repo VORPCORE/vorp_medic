@@ -32,6 +32,7 @@ Translation.Langs = {
             Nojoblabel = "Job doesn't have a label in config, please add",
         },
         Player = {
+            PlayerIsDead = "Player is not dead",
             PlayerId = "Player ID",
             Confirm = "Confirm",
             OnlyNumbersAreAllowed = "Only numbers are allowed",
@@ -95,6 +96,7 @@ Translation.Langs = {
             Nojoblabel = "El trabajo no tiene una etiqueta en la configuración, por favor añade una",
         },
         Player = {
+            PlayerIsNotDead = "El jugador no está muerto",
             PlayerId = "ID del Jugador",
             Confirm = "Confirmar",
             OnlyNumbersAreAllowed = "Solo se permiten números",
