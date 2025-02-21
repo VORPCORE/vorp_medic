@@ -32,7 +32,7 @@ Translation.Langs = {
             Nojoblabel = "Job doesn't have a label in config, please add",
         },
         Player = {
-            PlayerIsDead = "Player is not dead",
+            PlayerIsNotDead = "Player is not dead",
             PlayerId = "Player ID",
             Confirm = "Confirm",
             OnlyNumbersAreAllowed = "Only numbers are allowed",
