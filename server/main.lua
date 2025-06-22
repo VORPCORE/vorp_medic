@@ -1,8 +1,12 @@
-local Core                  = exports.vorp_core:GetCore()
-local Inv                   = exports.vorp_inventory
-local T <const>             = Translation.Langs[Config.Lang]
-local JobsToAlert <const>   = {}
-local PlayersAlerts <const> = {}
+local Core                    = exports.vorp_core:GetCore()
+local Inv                     = exports.vorp_inventory
+local T <const>               = Translation.Langs[Config.Lang]
+local JobsToAlert <const>     = {}
+local PlayersAlerts <const>   = {}
+
+local GetEntityCoords <const> = GetEntityCoords
+local GetPlayerPed <const>    = GetPlayerPed
+
 
 local function registerStorage(prefix, name, limit)
     local isInvRegstered <const> = Inv:isCustomInventoryRegistered(prefix)
@@ -49,26 +53,6 @@ local function openDoctorMenu(source)
         return Core.NotifyObjective(source, T.Jobs.YouAreNotADoctor, 5000)
     end
     TriggerClientEvent('vorp_medic:Client:OpenMedicMenu', source)
-end
-
-local function getClosestPlayer(source)
-    local players <const> = GetPlayers()
-    local ent <const> = GetPlayerPed(source)
-    local doctorCoords <const> = GetEntityCoords(ent)
-    local closestDistance = math.huge
-    local closestPlayer = nil
-
-    for _, value in ipairs(players) do
-        if tonumber(value) ~= source then
-            local targetCoords <const> = GetEntityCoords(GetPlayerPed(value))
-            local distance <const> = #(doctorCoords - targetCoords)
-            if distance <= closestDistance then
-                closestDistance = distance
-                closestPlayer = value
-            end
-        end
-    end
-    return closestPlayer
 end
 
 local function getSourceInfo(user, _source)
@@ -281,6 +265,32 @@ AddEventHandler("vorp:playerJobChange", function(source, new, _)
     TriggerClientEvent("vorp_medic:Client:JobUpdate", source)
 end)
 
+local function getClosestPlayer(source, isHeal)
+    local players <const> = GetPlayers()
+    local ent <const> = GetPlayerPed(source)
+    local doctorCoords <const> = GetEntityCoords(ent)
+    local closestDistance = math.huge
+    local closestPlayer = nil
+
+    for _, value in ipairs(players) do
+        if tonumber(value) ~= source then
+            local targetCoords <const> = GetEntityCoords(GetPlayerPed(value))
+            local distance <const> = #(doctorCoords - targetCoords)
+            if distance <= closestDistance then
+                closestDistance = distance
+                closestPlayer = value
+            end
+        end
+    end
+
+    -- allow medics to self heal?
+    if isHeal and not closestPlayer then
+        return source
+    end
+
+    return closestPlayer
+end
+
 CreateThread(function()
     for key, value in pairs(Config.Items) do
         Inv:registerUsableItem(key, function(data)
@@ -306,7 +316,7 @@ CreateThread(function()
                     Core.Player.Revive(tonumber(closestPlayer))
                 end)
             else
-                local closestPlayer <const> = getClosestPlayer(_source)
+                local closestPlayer <const> = getClosestPlayer(_source, true)
                 if not closestPlayer then return Core.NotifyObjective(_source, T.Player.NoPlayerFoundToRevive, 5000) end
 
                 TriggerClientEvent("vorp_medic:Client:HealAnim", _source)
@@ -314,7 +324,7 @@ CreateThread(function()
             end
 
             Inv:subItemById(_source, data.item.id)
-        end)
+        end, GetCurrentResourceName())
     end
 end)
 

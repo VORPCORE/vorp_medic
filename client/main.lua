@@ -1,13 +1,19 @@
-local Core     = exports.vorp_core:GetCore()
-local MenuData = exports.vorp_menu:GetMenuData()
-local T        = Translation.Langs[Config.Lang]
-local blip     = 0
+local Core                                    = exports.vorp_core:GetCore()
+local MenuData                                = exports.vorp_menu:GetMenuData()
+local T                                       = Translation.Langs[Config.Lang]
+local blip                                    = 0
+
+local GetActivePlayers <const>                = GetActivePlayers
+local GetEntityCoords <const>                 = GetEntityCoords
+local GetPlayerPed <const>                    = GetPlayerPed
+local VarString <const>                       = VarString
+local UiPromptSetActiveGroupThisFrame <const> = UiPromptSetActiveGroupThisFrame
 
 -- on resource stop
 AddEventHandler("onResourceStop", function(resource)
     if resource ~= GetCurrentResourceName() then return end
     -- remove blips
-    for key, value in pairs(Config.Stations) do
+    for _, value in pairs(Config.Stations) do
         RemoveBlip(value.BlipHandle)
     end
     -- remove blip
@@ -60,11 +66,11 @@ local function isOnDuty()
 end
 
 local function createBlips()
-    for key, value in pairs(Config.Stations) do
-        local blip <const> = BlipAddForCoords(Config.Blips.Style, value.Coords.x, value.Coords.y, value.Coords.z)
-        SetBlipSprite(blip, Config.Blips.Sprite)
-        BlipAddModifier(blip, Config.Blips.Color)
-        SetBlipName(blip, value.Name)
+    for _, value in pairs(Config.Stations) do
+        local blipHandle <const> = BlipAddForCoords(Config.Blips.Style, value.Coords.x, value.Coords.y, value.Coords.z)
+        SetBlipSprite(blipHandle, Config.Blips.Sprite, true)
+        BlipAddModifier(blipHandle, Config.Blips.Color)
+        SetBlipName(blipHandle, value.Name)
         value.BlipHandle = blip
     end
 end
@@ -184,7 +190,7 @@ function OpenDoctorMenu()
         align = Config.Align,
         elements = elements,
 
-    }, function(data, menu)
+    }, function(data, _)
         if data.current.value == "hire" then
             OpenHireMenu()
         elseif data.current.value == "fire" then
@@ -209,7 +215,7 @@ function OpenDoctorMenu()
                 TriggerServerEvent("vorp_medic:server:firePlayer", res)
             end
         end
-    end, function(data, menu)
+    end, function(_, menu)
         menu.close()
     end)
 end
@@ -254,7 +260,7 @@ function OpenHireMenu()
         if res and res > 0 then
             TriggerServerEvent("vorp_medic:server:hirePlayer", res, data.current.value)
         end
-    end, function(data, menu)
+    end, function(_, menu)
         menu.close()
     end)
 end
@@ -296,7 +302,7 @@ function OpenTeleportMenu(location)
         repeat Wait(0) until HasCollisionLoadedAroundEntity(PlayerPedId()) == 1
         DoScreenFadeIn(1000)
         repeat Wait(0) until IsScreenFadedIn()
-    end, function(data, menu)
+    end, function(_, menu)
         menu.close()
     end)
 end
@@ -340,7 +346,7 @@ local function OpenMedicMenu()
             end
             menu.close()
         end
-    end, function(data, menu)
+    end, function(_, menu)
         menu.close()
     end)
 end
@@ -398,7 +404,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     if blip ~= 0 then return end -- dont allow more than one call
 
     blip = BlipAddForCoords(Config.Blips.Style, targetCoords.x, targetCoords.y, targetCoords.z)
-    SetBlipSprite(blip, Config.Blips.Sprite)
+    SetBlipSprite(blip, Config.Blips.Sprite, true)
     BlipAddModifier(blip, Config.Blips.Color)
     SetBlipName(blip, T.Alert.playeralert)
 
