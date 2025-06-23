@@ -379,7 +379,7 @@ RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
 
         if inner > 99 then
             local newHealth = outter + health
-            SetEntityHealth(PlayerPedId(), newHealth, 0)
+            SetEntityHealth(PlayerPedId(), newHealth + 0.0, 0)
         else
             local newHealth = inner + health
             SetAttributeCoreValue(PlayerPedId(), 0, newHealth)
@@ -392,7 +392,7 @@ RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
 
         if inner > 99 then
             local newStamina = outer + stamina
-            ChangePedStamina(PlayerPedId(), newStamina)
+            ChangePedStamina(PlayerPedId(), newStamina + 0.0)
         else
             local newStamina = outer + stamina
             SetAttributeCoreValue(PlayerPedId(), 1, newStamina)
