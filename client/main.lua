@@ -377,7 +377,7 @@ RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
     local player <const> = PlayerId()
     if health and health > 0 then
         local inner <const> = GetAttributeCoreValue(ped, 0)
-        local outter <const> = GetPlayerHealth(player)
+        local outter <const> = math.floor(GetPlayerHealth(player)) + 100
 
         if inner > 99 then
             local newHealth = outter + health
@@ -390,13 +390,10 @@ RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
 
     if stamina and stamina > 0 then
         local inner <const> = GetAttributeCoreValue(ped, 1)
-        local outer <const> = GetPlayerStamina(player)
-
         if inner > 99 then
-            local newStamina = outer + stamina
-            ChangePedStamina(ped, newStamina + 0.0)
+            ChangePedStamina(ped, stamina + 0.0)
         else
-            local newStamina = outer + stamina
+            local newStamina = inner + stamina
             SetAttributeCoreValue(ped, 1, newStamina)
         end
     end

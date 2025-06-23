@@ -2,22 +2,22 @@ Config = {}
 
 Config.DevMode = false
 
-Config.Align = "top-left"                 -- menu alignment
+Config.Align = "top-left"                -- menu alignment
 
-Config.Lang = "English"                   -- language you want to use please make sure its in the translation.lua
+Config.Lang = "English"                  -- language you want to use please make sure its in the translation.lua
 
-Config.AllowOnlyDeadToAlert = true        -- if true only dead players can alert doctors
+Config.AllowOnlyDeadToAlert = true       -- if true only dead players can alert doctors
 
 Config.AlertDoctorCommand = "calldoctor" -- command to alert doctors
-Config.cancelalert = "cancelDoctorAlert"  -- command to cancel alert
-Config.finishalert = "finishDoctorAlert"   -- command to finish alert
-Config.DoctorMenuCommand = 'doctormenu'   -- Command to go on duty and teleport
+Config.cancelalert = "cancelDoctorAlert" -- command to cancel alert
+Config.finishalert = "finishDoctorAlert" -- command to finish alert
+Config.DoctorMenuCommand = 'doctormenu'  -- Command to go on duty and teleport
 
 -- add any job names here
 Config.MedicJobs = {
     doctor = true,
     headdoctor = true,
-    shaman =  true,
+    shaman = true,
 
 }
 
@@ -30,13 +30,13 @@ Config.JobLabels = {
     doctor = "Doctor",
     headdoctor = "Head Doctor",
     shaman = "Shaman",
-   
+
 }
 
 -- jobs that can open hire menu
 Config.DoctorJobs = {
     headdoctor = true,
-  
+
 }
 
 -- if true storage for every doctor station will be shared if false they will be unique
@@ -131,8 +131,8 @@ Config.Stations = {
 -- usable items
 Config.Items = {
     bandage = {              -- item name
-        health = 50,         -- health to add
-        stamina = 100,       -- stamina to add
+        health = 50,         -- health to add dont use decimals
+        stamina = 100,       -- stamina to add dont use decimals
         revive = false,      -- if true will revive player,
         mustBeOnDuty = false -- if true player must be on duty to use this item /have the job
     },
