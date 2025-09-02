@@ -1,4 +1,4 @@
-local Lib <const>              = Import({ "/configs/config.lua", "/languages/translation.lua", "prompts", "blips" })
+local Lib <const>              = Import({ "/configs/config", "/languages/translation", "prompts", "blips" })
 local Config <const>           = Lib.Config --[[@as vorp_medic]]
 local Translation <const>      = Lib.Translation --[[@as vorp_medic_translation]]
 local Prompts <const>          = Lib.Prompts --[[@as PROMPTS]]
