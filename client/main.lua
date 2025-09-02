@@ -103,7 +103,7 @@ local function registerLocations()
                     LIB.NOTIFY:Objective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                 end
             end
-        end, Config.DevMode) -- auto start on register
+        end, true) -- auto start on register
 
         table.insert(prompts, prompt)
     end
