@@ -17,7 +17,7 @@ This is a medic system for RedM using the VORP framework. It integrates various 
 - Configurable item limits, allowing for a flexible inventory management system within the doctor force.
 
 ### **On-Duty System**:
-- Utilize **statebags** to track whether players are on or off duty.
+- Utilize **statebags** to track whether players are on or off duty for light checks.
 
 ### **Teleport System**:
 - Set up teleport points for **fast travel** between different doctor stations or key locations.
@@ -65,3 +65,11 @@ You can configure the script to suit your server's needs. The following settings
 
 For support or further information please ask in the [Vorp Core discord](https://discord.gg/JjNYMnDKMf)
 . Updates will be released periodically to improve functionality or compatibility with the latest VORP framework versions.
+
+
+## **Exports**
+
+```lua
+local isOnDuty = exports.vorp_medic:isOnDuty(source) -- true or false
+local doctor = exports.vorp_medic:getDoctorFromCall(source) -- if on call will return its source id
+```

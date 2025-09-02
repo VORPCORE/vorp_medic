@@ -1,4 +1,5 @@
-Translation = {}
+---@class vorp_medic_translation
+local Translation = {}
 
 Translation.Langs = {
     English = {
@@ -130,4 +131,8 @@ Translation.Langs = {
         }
     },
     -- Add your language here and open a PR to merge other languages to the main repo
+}
+
+return {
+    Translation = Translation,
 }

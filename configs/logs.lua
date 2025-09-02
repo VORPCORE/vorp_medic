@@ -1,4 +1,4 @@
-Logs = {
+local Logs = {
     Webhook         =       "",                 --add webhook for all other Police logs Url here 
     StorageWebook   =       "",                 --add Storage webhook Url here
     DutyWebhook     =       "",                 --add Duty webhook Url here
@@ -31,4 +31,8 @@ Logs = {
         PlayerName      = "Player Name: "  
     },
 
+}
+
+return {
+    Logs = Logs,
 }

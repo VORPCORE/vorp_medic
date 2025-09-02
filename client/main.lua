@@ -1,26 +1,19 @@
-local Core                                    = exports.vorp_core:GetCore()
-local MenuData                                = exports.vorp_menu:GetMenuData()
-local T                                       = Translation.Langs[Config.Lang]
-local blip                                    = 0
+local Lib <const>              = Import({ "/configs/config.lua", "/languages/translation.lua", "prompts", "blips" })
+local Config <const>           = Lib.Config --[[@as vorp_medic]]
+local Translation <const>      = Lib.Translation --[[@as vorp_medic_translation]]
+local Prompts <const>          = Lib.Prompts --[[@as PROMPTS]]
+local Blips <const>            = Lib.Blips --[[@as BLIPS]]
 
-local GetActivePlayers <const>                = GetActivePlayers
-local GetEntityCoords <const>                 = GetEntityCoords
-local GetPlayerPed <const>                    = GetPlayerPed
-local VarString <const>                       = VarString
-local UiPromptSetActiveGroupThisFrame <const> = UiPromptSetActiveGroupThisFrame
+local MenuData <const>         = exports.vorp_menu:GetMenuData()
+local T <const>                = Translation.Langs[Config.Lang]
 
--- on resource stop
-AddEventHandler("onResourceStop", function(resource)
-    if resource ~= GetCurrentResourceName() then return end
-    -- remove blips
-    for _, value in pairs(Config.Stations) do
-        RemoveBlip(value.BlipHandle)
-    end
-    -- remove blip
-    if blip ~= 0 then
-        RemoveBlip(blip)
-    end
-end)
+local blip                     = 0
+local prompts <const>          = {}
+
+local GetActivePlayers <const> = GetActivePlayers
+local GetEntityCoords <const>  = GetEntityCoords
+local GetPlayerPed <const>     = GetPlayerPed
+
 
 local function getClosestPlayer()
     local players <const> = GetActivePlayers()
@@ -39,19 +32,6 @@ local function getClosestPlayer()
     return false, nil
 end
 
-local group <const> = GetRandomIntInRange(0, 0xFFFFFF)
-local prompt        = 0
-local function registerPrompts()
-    if prompt ~= 0 then UiPromptDelete(prompt) end
-    prompt = UiPromptRegisterBegin()
-    UiPromptSetControlAction(prompt, Config.Keys.B)
-    local label = VarString(10, "LITERAL_STRING", T.Menu.Press)
-    UiPromptSetText(prompt, label)
-    UiPromptSetGroup(prompt, group, 0)
-    UiPromptSetStandardMode(prompt, true)
-    UiPromptRegisterEnd(prompt)
-end
-
 local function getPlayerJob()
     local job <const> = LocalPlayer.state.Character.Job
     return Config.MedicJobs[job]
@@ -59,7 +39,7 @@ end
 
 local function isOnDuty()
     if not LocalPlayer.state.isMedicDuty then
-        Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
+        LIB.NOTIFY:Objective(T.Duty.YouAreNotOnDuty, 5000)
         return false
     end
     return true
@@ -67,82 +47,62 @@ end
 
 local function createBlips()
     for _, value in pairs(Config.Stations) do
-        local blipHandle <const> = BlipAddForCoords(Config.Blips.Style, value.Coords.x, value.Coords.y, value.Coords.z)
-        SetBlipSprite(blipHandle, Config.Blips.Sprite, true)
-        BlipAddModifier(blipHandle, Config.Blips.Color)
-        SetBlipName(blipHandle, value.Name)
-        value.BlipHandle = blip
+        Blips:Create('coords', {
+            Pos = value.Coords,
+            Blip = Config.Blips.Style,
+            Options = {                       -- optional
+                sprite = Config.Blips.Sprite, --string or integer if type is entity or coords
+                name = value.Name,
+                modifier = Config.Blips.Color,
+            },
+        })
     end
 end
 
-local isHandleRunning = false
-local function Handle()
-    registerPrompts()
-    isHandleRunning = true
-    while true do
-        local sleep = 1000
-        for key, value in pairs(Config.Stations) do
+local function registerLocations()
+    for key, value in pairs(Config.Stations) do
+        local data = {
+            coords = value.Coords,
+            distance = 2.0,
+            label = value.Name,
+            sleep = 800,
+            prompts = {
+                { type = 'Press', key = Config.Keys.B, label = 'press', mode = 'Standard' },
+            }
+        }
+
+        prompts[#prompts + 1] = Prompts:Register(data, function()
             local coords <const> = GetEntityCoords(PlayerPedId())
 
-            if value.Storage[key] then
-                local distanceStorage <const> = #(coords - value.Storage[key].Coords)
-                if distanceStorage < 2.0 then
-                    sleep = 0
-                    if distanceStorage < 1.5 then
-                        local label <const> = VarString(10, "LITERAL_STRING", value.Name)
-                        UiPromptSetActiveGroupThisFrame(group, label, 0, 0, 0, 0)
-
-                        if UiPromptHasStandardModeCompleted(prompt, 0) then
-                            if isOnDuty() then
-                                local isAnyPlayerClose <const> = getClosestPlayer()
-                                if not isAnyPlayerClose then
-                                    TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
-                                else
-                                    Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
-                                end
-                            end
-                        end
+            local distanceStorage <const> = #(coords - value.Storage[key].Coords)
+            if distanceStorage < 2.0 then
+                if isOnDuty() then
+                    local isAnyPlayerClose <const> = getClosestPlayer()
+                    if not isAnyPlayerClose then
+                        TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
+                    else
+                        LIB.NOTIFY:Objective(T.Error.PlayerNearbyCantOpenInventory, 5000)
                     end
                 end
             end
 
-            if value.Teleports[key] then
-                local distanceTeleport <const> = #(coords - value.Teleports[key].Coords)
-                if distanceTeleport < 2.0 then
-                    sleep = 0
-                    if distanceTeleport < 1.5 then
-                        local label <const> = VarString(10, "LITERAL_STRING", value.Name)
-                        UiPromptSetActiveGroupThisFrame(group, label, 0, 0, 0, 0)
-
-                        if UiPromptHasStandardModeCompleted(prompt, 0) then
-                            if isOnDuty() then
-                                OpenTeleportMenu(key)
-                            end
-                        end
-                    end
+            local distanceTeleport <const> = #(coords - value.Teleports[key].Coords)
+            if distanceTeleport < 2.0 then
+                if isOnDuty() then
+                    OpenTeleportMenu(key)
                 end
             end
 
             local distanceStation <const> = #(coords - value.Coords)
             if distanceStation < 2.0 then
-                sleep = 0
-
-                local label <const> = VarString(10, "LITERAL_STRING", value.Name)
-                UiPromptSetActiveGroupThisFrame(group, label, 0, 0, 0, 0)
-
-                if UiPromptHasStandardModeCompleted(prompt, 0) then
-                    local job <const> = LocalPlayer.state.Character.Job
-                    if Config.MedicJobs[job] then
-                        OpenDoctorMenu()
-                    else
-                        Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
-                    end
+                local job <const> = LocalPlayer.state.Character.Job
+                if Config.MedicJobs[job] then
+                    OpenDoctorMenu()
+                else
+                    LIB.NOTIFY:Objective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                 end
             end
-        end
-
-        if not isHandleRunning then return end
-        Wait(sleep)
+        end, false) -- auto start on register
     end
 end
 
@@ -150,23 +110,32 @@ end
 RegisterNetEvent("vorp_medic:Client:JobUpdate", function()
     local hasJob = getPlayerJob()
 
+    -- lost job so destroy them
     if not hasJob then
-        isHandleRunning = false
+        for _, value in pairs(prompts) do
+            value:Destroy()
+        end
+        table.wipe(prompts)
         return
     end
 
-    if isHandleRunning then return end
-    CreateThread(Handle)
+    -- already exists no need to register or start them
+    if #prompts > 0 then
+        return
+    end
+
+    -- player was given the job
+    registerLocations()
 end)
 
 CreateThread(function()
     repeat Wait(5000) until LocalPlayer.state.IsInSession
     createBlips()
+
     local hasJob <const> = getPlayerJob()
     if not hasJob then return end
-    if not isHandleRunning then
-        CreateThread(Handle)
-    end
+
+    registerLocations()
 end)
 
 function OpenDoctorMenu()
@@ -222,7 +191,7 @@ end
 
 function OpenHireMenu()
     MenuData.CloseAll()
-    local elements = {}
+    local elements <const> = {}
     for key, _ in pairs(Config.MedicJobs) do
         table.insert(elements, { label = T.Jobs.Job .. ": " .. key, value = key, desc = T.Jobs.Job .. key })
     end
@@ -240,7 +209,7 @@ function OpenHireMenu()
         end
 
         menu.close()
-        local MyInput = {
+        local MyInput <const> = {
             type = "enableinput",
             inputType = "input",
             button = T.Player.Confirm,
@@ -255,8 +224,8 @@ function OpenHireMenu()
             }
         }
 
-        local res = exports.vorp_inputs:advancedInput(MyInput)
-        res = tonumber(res)
+        local res             = exports.vorp_inputs:advancedInput(MyInput)
+        res                   = tonumber(res)
         if res and res > 0 then
             TriggerServerEvent("vorp_medic:server:hirePlayer", res, data.current.value)
         end
@@ -338,11 +307,11 @@ local function OpenMedicMenu()
         if data.current.value == "teleports" then
             OpenTeleportMenu()
         elseif data.current.value == "duty" then
-            local result = Core.Callback.TriggerAwait("vorp_medic:server:checkDuty")
+            local result <const> = LIB.CORE.Callback.TriggerAwait("vorp_medic:server:checkDuty")
             if result then
-                Core.NotifyObjective(T.Duty.YouAreNowOnDuty, 5000)
+                LIB.NOTIFY:Objective(T.Duty.YouAreNowOnDuty, 5000)
             else
-                Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
+                LIB.NOTIFY:Objective(T.Duty.YouAreNotOnDuty, 5000)
             end
             menu.close()
         end
@@ -402,28 +371,34 @@ end)
 RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     if blip ~= 0 then return end -- dont allow more than one call
 
-    blip = BlipAddForCoords(Config.Blips.Style, targetCoords.x, targetCoords.y, targetCoords.z)
-    SetBlipSprite(blip, Config.Blips.Sprite, true)
-    BlipAddModifier(blip, Config.Blips.Color)
-    SetBlipName(blip, T.Alert.playeralert)
+    blip = Blips:Create('coords', {
+        Pos = targetCoords,
+        Blip = Config.Blips.Style,
+        Options = {
+            sprite = Config.Blips.Sprite,
+            name = T.Alert.playeralert,
+            modifier = Config.Blips.Color,
+        },
+    })
 
     StartGpsMultiRoute(joaat("COLOR_RED"), true, true)
     AddPointToGpsMultiRoute(targetCoords.x, targetCoords.y, targetCoords.z, false)
     SetGpsMultiRouteRender(true)
+    local ped <const> = PlayerPedId()
+    repeat Wait(1000) until #(GetEntityCoords(ped) - targetCoords) < 15.0 or blip == 0
 
-    repeat Wait(1000) until #(GetEntityCoords(PlayerPedId()) - targetCoords) < 15.0 or blip == 0
     if blip ~= 0 then
-        Core.NotifyObjective(T.Alert.ArrivedAtLocation, 5000)
+        LIB.NOTIFY:Objective(T.Alert.ArrivedAtLocation, 5000)
+        blip:Remove()
+        blip = 0
     end
-    RemoveBlip(blip)
-    blip = 0
     ClearGpsMultiRoute()
 end)
 
 
 RegisterNetEvent("vorp_medic:Client:RemoveBlip", function()
     if blip == 0 then return end
-    RemoveBlip(blip)
+    blip:Remove()
     blip = 0
     ClearGpsMultiRoute()
 end)

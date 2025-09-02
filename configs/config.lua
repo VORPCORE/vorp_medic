@@ -1,4 +1,5 @@
-Config = {}
+---@class vorp_medic
+local Config = {}
 
 Config.DevMode = false
 
@@ -149,4 +150,8 @@ Config.Items = {
         mustBeOnDuty = true
     },
 
+}
+
+return {
+    Config = Config,
 }
