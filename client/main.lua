@@ -102,7 +102,7 @@ local function registerLocations()
                     LIB.NOTIFY:Objective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                 end
             end
-        end, false) -- auto start on register
+        end, Config.DevMode) -- auto start on register
     end
 end
 
