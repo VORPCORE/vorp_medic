@@ -50,18 +50,17 @@ Config.Storage = {
     Valentine = {
         Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(-288.74, 808.77, 119.44)
+        Coords = vector3(-288.74, 808.77, 119.44),
     },
     Strawberry = {
         Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(-1803.33, -432.59, 158.83)
+        Coords = vector3(-1803.33, -432.59, 158.83),
     },
     SaintDenis = {
         Name = "Medical storage",
         Limit = 1000,
-        Coords = vector3(2733.1, -1230.26, 50.42)
-
+        Coords = vector3(2733.1, -1230.26, 50.42),
     },
 
     -- add more locations here
@@ -75,15 +74,15 @@ Config.UseTeleportsMenu = true
 Config.Teleports = {
 
     Valentine = {
-        Name = " Valentine",
+        Name = " Teleport",
         Coords = vector3(-280.38, 817.81, 119.38)
     },
     Strawberry = {
-        Name = "Strawberry",
+        Name = "Teleport",
         Coords = vector3(-1793.37, -422.81, 155.97)
     },
     SaintDenis = {
-        Name = "Saint Denis",
+        Name = "Teleport",
         Coords = vector3(2723.1, -1238.92, 49.95)
 
     },
@@ -108,19 +107,19 @@ Config.AlertBlips = {
 Config.Stations = {
 
     Valentine = {
-        Name = "Valentine doctor",
+        Name = "Boss Menu",
         Coords = vector3(-288.82, 808.44, 119.43),
         Teleports = Config.Teleports,
         Storage = Config.Storage
     },
     Strawberry = {
-        Name = "Strawberry doctor",
+        Name = "Boss Menu",
         Coords = vector3(-1807.87, -430.77, 158.83),
         Teleports = Config.Teleports,
         Storage = Config.Storage
     },
     SaintDenis = {
-        Name = "Saint Denis doctor",
+        Name = "Boss Menu",
         Coords = vector3(2721.29, -1233.11, 50.37),
         Teleports = Config.Teleports,
         Storage = Config.Storage

@@ -2,7 +2,7 @@ local Lib <const>              = Import({ "/configs/config", "/languages/transla
 local Config <const>           = Lib.Config --[[@as vorp_medic]]
 local Translation <const>      = Lib.Translation --[[@as vorp_medic_translation]]
 local Prompts <const>          = Lib.Prompts --[[@as PROMPTS]]
-local Blips <const>            = Lib.Blips --[[@as BLIPS]]
+local Blips <const>            = Lib.Blips --[[@as MAP]]
 
 local MenuData <const>         = exports.vorp_menu:GetMenuData()
 local T <const>                = Translation.Langs[Config.Lang]
@@ -62,20 +62,23 @@ end
 local function registerLocations()
     for key, value in pairs(Config.Stations) do
         local data = {
-            coords = value.Coords,
-            distance = 2.0,
-            label = value.Name,
             sleep = 800,
+            locations = {
+                { coords = value.Coords,                label = value.Name,                distance = 2.0 },
+                { coords = value.Storage[key].Coords,   label = value.Storage[key].Name,   distance = 1.5 },
+                { coords = value.Teleports[key].Coords, label = value.Teleports[key].Name, distance = 2.0 },
+            },
             prompts = {
-                { type = 'Press', key = Config.Keys.B, label = 'press', mode = 'Standard' },
+                {
+                    type = T.Menu.Press,
+                    key = Config.Keys.B,
+                    label = 'press',
+                    mode = 'Standard',
+                },
             }
         }
-
-        prompts[#prompts + 1] = Prompts:Register(data, function()
-            local coords <const> = GetEntityCoords(PlayerPedId())
-
-            local distanceStorage <const> = #(coords - value.Storage[key].Coords)
-            if distanceStorage < 2.0 then
+        local prompt <const> = Prompts:Register(data, function(prompt, index, self)
+            if index == 2 then
                 if isOnDuty() then
                     local isAnyPlayerClose <const> = getClosestPlayer()
                     if not isAnyPlayerClose then
@@ -86,15 +89,13 @@ local function registerLocations()
                 end
             end
 
-            local distanceTeleport <const> = #(coords - value.Teleports[key].Coords)
-            if distanceTeleport < 2.0 then
+            if index == 3 then
                 if isOnDuty() then
                     OpenTeleportMenu(key)
                 end
             end
 
-            local distanceStation <const> = #(coords - value.Coords)
-            if distanceStation < 2.0 then
+            if index == 1 then
                 local job <const> = LocalPlayer.state.Character.Job
                 if Config.MedicJobs[job] then
                     OpenDoctorMenu()
@@ -103,6 +104,8 @@ local function registerLocations()
                 end
             end
         end, Config.DevMode) -- auto start on register
+
+        table.insert(prompts, prompt)
     end
 end
 
