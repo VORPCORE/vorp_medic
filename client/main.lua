@@ -4,6 +4,7 @@ local Translation <const>      = Lib.Translation --[[@as vorp_medic_translation]
 local Prompts <const>          = Lib.Prompts --[[@as PROMPTS]]
 local Blips <const>            = Lib.Blips --[[@as MAP]]
 
+local Core <const>             = exports.vorp_core:GetCore()
 local MenuData <const>         = exports.vorp_menu:GetMenuData()
 local T <const>                = Translation.Langs[Config.Lang]
 
@@ -39,7 +40,7 @@ end
 
 local function isOnDuty()
     if not LocalPlayer.state.isMedicDuty then
-        LIB.NOTIFY:Objective(T.Duty.YouAreNotOnDuty, 5000)
+        Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
         return false
     end
     return true
@@ -84,7 +85,7 @@ local function registerLocations()
                     if not isAnyPlayerClose then
                         TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
                     else
-                        LIB.NOTIFY:Objective(T.Error.PlayerNearbyCantOpenInventory, 5000)
+                        Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
                     end
                 end
             end
@@ -100,7 +101,7 @@ local function registerLocations()
                 if Config.MedicJobs[job] then
                     OpenDoctorMenu()
                 else
-                    LIB.NOTIFY:Objective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
+                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                 end
             end
         end, true) -- auto start on register
@@ -310,11 +311,11 @@ local function OpenMedicMenu()
         if data.current.value == "teleports" then
             OpenTeleportMenu()
         elseif data.current.value == "duty" then
-            local result <const> = LIB.CORE.Callback.TriggerAwait("vorp_medic:server:checkDuty")
+            local result <const> = Core.Callback.TriggerAwait("vorp_medic:server:checkDuty")
             if result then
-                LIB.NOTIFY:Objective(T.Duty.YouAreNowOnDuty, 5000)
+                Core.NotifyObjective(T.Duty.YouAreNowOnDuty, 5000)
             else
-                LIB.NOTIFY:Objective(T.Duty.YouAreNotOnDuty, 5000)
+                Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
             end
             menu.close()
         end
@@ -391,7 +392,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     repeat Wait(1000) until #(GetEntityCoords(ped) - targetCoords) < 15.0 or blip == 0
 
     if blip ~= 0 then
-        LIB.NOTIFY:Objective(T.Alert.ArrivedAtLocation, 5000)
+        Core.NotifyObjective(T.Alert.ArrivedAtLocation, 5000)
         blip:Remove()
         blip = 0
     end
@@ -401,6 +402,7 @@ end)
 
 RegisterNetEvent("vorp_medic:Client:RemoveBlip", function()
     if blip == 0 then return end
+
     blip:Remove()
     blip = 0
     ClearGpsMultiRoute()
