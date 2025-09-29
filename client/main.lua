@@ -15,6 +15,7 @@ local GetActivePlayers <const> = GetActivePlayers
 local GetEntityCoords <const>  = GetEntityCoords
 local GetPlayerPed <const>     = GetPlayerPed
 
+local EmployeesCache = {}
 
 local function getClosestPlayer()
     local players <const> = GetActivePlayers()
@@ -34,8 +35,21 @@ local function getClosestPlayer()
 end
 
 local function getPlayerJob()
-    local job <const> = LocalPlayer.state.Character.Job
-    return Config.MedicJobs[job]
+    local job <const> = (LocalPlayer.state.Character and (LocalPlayer.state.Character.Job or LocalPlayer.state.Character.job)) or nil
+    return job ~= nil and (Config.MedicJobs[job] ~= nil) or false
+end
+
+-- check if player's grade=3
+local function isBoss()
+    local c = LocalPlayer.state and LocalPlayer.state.Character
+    if not c then return false end
+
+    local job <const> = c.Job --or c.job
+    local grade = c.jobgrade or c.JobGrade or c.jobGrade or c.grade or c.Grade
+
+    local cfg = job and Config.MedicJobs[job]
+    local r3  = cfg and cfg.Ranks and cfg.Ranks[3]
+    return (r3 and r3.Boss == true) and tonumber(grade) == 3
 end
 
 local function isOnDuty()
@@ -60,91 +74,19 @@ local function createBlips()
     end
 end
 
-local function registerLocations()
-    for key, value in pairs(Config.Stations) do
-        local data = {
-            sleep = 800,
-            locations = {
-                { coords = value.Coords,                label = value.Name,                distance = 2.0 },
-                { coords = value.Storage[key].Coords,   label = value.Storage[key].Name,   distance = 1.5 },
-                { coords = value.Teleports[key].Coords, label = value.Teleports[key].Name, distance = 2.0 },
-            },
-            prompts = {
-                {
-                    type = T.Menu.Press,
-                    key = Config.Keys.B,
-                    label = 'press',
-                    mode = 'Standard',
-                },
-            }
-        }
-        local prompt <const> = Prompts:Register(data, function(prompt, index, self)
-            if index == 2 then
-                if isOnDuty() then
-                    local isAnyPlayerClose <const> = getClosestPlayer()
-                    if not isAnyPlayerClose then
-                        TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
-                    else
-                        Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
-                    end
-                end
-            end
-
-            if index == 3 then
-                if isOnDuty() then
-                    OpenTeleportMenu(key)
-                end
-            end
-
-            if index == 1 then
-                local job <const> = LocalPlayer.state.Character.Job
-                if Config.MedicJobs[job] then
-                    OpenDoctorMenu()
-                else
-                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
-                end
-            end
-        end, true) -- auto start on register
-
-        table.insert(prompts, prompt)
-    end
-end
-
-
-RegisterNetEvent("vorp_medic:Client:JobUpdate", function()
-    local hasJob = getPlayerJob()
-
-    -- lost job so destroy them
-    if not hasJob then
-        for _, value in pairs(prompts) do
-            value:Destroy()
-        end
-        table.wipe(prompts)
-        return
-    end
-
-    -- already exists no need to register or start them
-    if #prompts > 0 then
-        return
-    end
-
-    -- player was given the job
-    registerLocations()
-end)
-
-CreateThread(function()
-    repeat Wait(5000) until LocalPlayer.state.IsInSession
-    createBlips()
-
-    local hasJob <const> = getPlayerJob()
-    if not hasJob then return end
-
-    registerLocations()
-end)
-
 function OpenDoctorMenu()
     MenuData.CloseAll()
+
+    local isOnDuty <const> = LocalPlayer.state.isMedicDuty
+    local label <const> = isOnDuty and T.Duty.OffDuty or T.Duty.OnDuty
+    local desc <const> = isOnDuty and T.Duty.GoOffDuty or T.Duty.GoOnDuty
+
     local elements <const> = {
+        {
+            label = label,
+            value = "duty",
+            desc = desc .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+        },
         {
             label = T.Menu.HirePlayer,
             value = "hire",
@@ -154,6 +96,16 @@ function OpenDoctorMenu()
             label = T.Menu.FirePlayer,
             value = "fire",
             desc = T.Menu.FirePlayer .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+        },
+        {
+            label = T.Menu.Employees,
+            value = "employees",
+            desc = T.Menu.descEmployees .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+        },
+        {
+            label = T.Menu.Close,
+            value = "close",
+            desc = T.Menu.descClose .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
         }
     }
 
@@ -162,11 +114,24 @@ function OpenDoctorMenu()
         subtext = T.Menu.HireFireMenu,
         align = Config.Align,
         elements = elements,
+    }, function(data, menu)
+        local action = data.current.value
 
-    }, function(data, _)
-        if data.current.value == "hire" then
-            OpenHireMenu()
-        elseif data.current.value == "fire" then
+        if action == "duty" then
+            local result <const> = Core.Callback.TriggerAwait("vorp_medic:server:checkDuty")
+            if result then
+                Core.NotifyObjective(T.Duty.YouAreNowOnDuty, 5000)
+            else
+                Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
+            end
+            return
+        end
+
+        if action == "hire" then
+            OpenHireMenu(); return
+        end
+
+        if action == "fire" then
             local MyInput <const> = {
                 type = "enableinput",
                 inputType = "input",
@@ -187,7 +152,43 @@ function OpenDoctorMenu()
             if res and res > 0 then
                 TriggerServerEvent("vorp_medic:server:firePlayer", res)
             end
+            return
         end
+
+        if action == "employees" then
+            OpenEmployeesMenu(); return
+        end
+
+        if action == "close" then
+            menu.close(); return
+        end
+    end, function(_, menu)
+        menu.close()
+    end)
+end
+
+function OpenEmployeesMenu()
+    MenuData.CloseAll()
+    local elements <const> = {}
+    for job, _ in pairs(Config.MedicJobs) do
+        table.insert(elements, { label = T.Jobs.Job .. ": " .. job, value = job, desc = "Open list for: " .. job })
+    end
+
+    table.insert(elements, { label = T.Menu.Back, value = "back", desc = T.Menu.descBack})
+
+    MenuData.Open("default", GetCurrentResourceName(), "OpenEmployeesMenu", {
+        title = T.Menu.Employees,
+        subtext = T.Menu.subtEmployees,
+        elements = elements,
+        align = Config.Align,
+    }, function(data, menu)
+        if data.current.value == "back" then
+            menu.close()
+            return OpenDoctorMenu()
+        end
+        local job = data.current.value
+        menu.close()
+        TriggerServerEvent("vorp_medic:server:listEmployeesAll", job) -- to get name/job/rank/label
     end, function(_, menu)
         menu.close()
     end)
@@ -200,6 +201,8 @@ function OpenHireMenu()
         table.insert(elements, { label = T.Jobs.Job .. ": " .. key, value = key, desc = T.Jobs.Job .. key })
     end
 
+    table.insert(elements, { label = T.Menu.Back, value = "back", desc = T.Menu.descBack})
+
     MenuData.Open("default", GetCurrentResourceName(), "OpenHireFireMenu", {
         title = T.Menu.HireFireMenu,
         subtext = T.Menu.SubMenu,
@@ -208,6 +211,11 @@ function OpenHireMenu()
         lastmenu = "OpenDoctorMenu"
 
     }, function(data, menu)
+        if data.current.value == "back" then
+            menu.close()
+            return OpenDoctorMenu()
+        end
+
         if (data.current == "backup") then
             return _G[data.trigger]()
         end
@@ -282,9 +290,9 @@ end
 
 local function OpenMedicMenu()
     MenuData.CloseAll()
-    local isONduty <const> = LocalPlayer.state.isMedicDuty
-    local label <const> = isONduty and T.Duty.OffDuty or T.Duty.OnDuty
-    local desc <const> = isONduty and T.Duty.GoOffDuty or T.Duty.GoOnDuty
+    local isOnDuty <const> = LocalPlayer.state.isMedicDuty
+    local label <const> = isOnDuty and T.Duty.OffDuty or T.Duty.OnDuty
+    local desc <const> = isOnDuty and T.Duty.GoOffDuty or T.Duty.GoOnDuty
     local elements <const> = {
         {
             label = label,
@@ -332,6 +340,178 @@ local function playAnimation(dict, anim)
     end
     TaskPlayAnim(ped, dict, anim, 8.0, 8.0, 2000, 1, 0, false, false, false)
 end
+
+function OpenRankMenu(charidKey, job, currentGrade, jobFilterForReturn)
+    MenuData.CloseAll()
+
+    local cfg = Config.MedicJobs[job]
+    if not cfg or not cfg.Ranks then
+        print("No ranks configured for this job.")
+        return OpenEmployeeActionsMenu(charidKey, jobFilterForReturn)
+    end
+
+    local elements <const> = {}
+    for grade = 0, 3 do
+        local r = cfg.Ranks[grade]
+        local name = r and r.name or ("Grade " .. tostring(grade))
+        local suffix = (grade == currentGrade) and " (current)" or ""
+        table.insert(elements, {
+            label = string.format("[%d] %s%s", grade, name, suffix),
+            value = grade,
+            desc  = T.Menu.descSetRank
+        })
+    end
+
+    table.insert(elements, { label = T.Menu.Back, value = "back", desc = T.Menu.descBack})
+
+    MenuData.Open("default", GetCurrentResourceName(), "OpenRankMenu", {
+        title = ("Set Rank: %s"):format(job),
+        subtext = ("CharID: %s | Current: %d"):format(charidKey, currentGrade or 0),
+        elements = elements,
+        align = Config.Align,
+    }, function(data, menu)
+        if data.current.value == "back" then
+            menu.close()
+            return OpenEmployeeActionsMenu(charidKey, jobFilterForReturn)
+        end
+
+        local newGrade = tonumber(data.current.value)
+        if newGrade ~= nil then
+            TriggerServerEvent("vorp_medic:server:setGradeByCharId", tonumber(charidKey), newGrade)
+            Wait(300)
+            TriggerServerEvent("vorp_medic:server:listEmployeesAll", jobFilterForReturn)
+            menu.close()
+        end
+    end, function(_, menu)
+        menu.close()
+    end)
+end
+
+function OpenEmployeeActionsMenu(charidKey, job)
+    local emp = EmployeesCache[charidKey]
+    if not emp then return end
+
+    local elements = {
+        { label = T.Menu.SetRank, value = "setrank" },
+        { label = T.Menu.Fire, value = "fire" },
+        { label = T.Menu.Back, value = "back" },
+    }
+
+    MenuData.Open("default", GetCurrentResourceName(), "OpenEmployeeActionsMenu", {
+        title = ("Actions: %s %s"):format(emp.firstname or "", emp.lastname or ""),
+        subtext = ("CharID: %s"):format(charidKey),
+        elements = elements,
+        align = Config.Align,
+    }, function(data, menu)
+        local action = data.current.value
+
+        if action == "back" then
+            menu.close()
+            TriggerServerEvent("vorp_medic:server:listEmployeesAll", job)
+            return
+        end
+
+        if action == "setrank" then
+            menu.close()
+            return OpenRankMenu(charidKey, emp.job, tonumber(emp.jobgrade or 0), job)
+        end
+
+        if action == "fire" then
+            TriggerServerEvent("vorp_medic:server:fireByCharId", tonumber(charidKey))
+            Wait(300)
+            TriggerServerEvent("vorp_medic:server:listEmployeesAll", job)
+            menu.close()
+            return
+        end
+    end, function(_, menu)
+        menu.close()
+    end)
+end
+
+local function registerLocations()
+    for key, value in pairs(Config.Stations) do
+        local data = {
+            sleep = 800,
+            locations = {
+                { coords = value.Coords,                label = value.Name,                distance = 2.0 },
+                { coords = value.Storage[key].Coords,   label = value.Storage[key].Name,   distance = 1.5 },
+                { coords = value.Teleports[key].Coords, label = value.Teleports[key].Name, distance = 2.0 },
+            },
+            prompts = {
+                {
+                    type = T.Menu.Press,
+                    key = Config.Keys.B,
+                    label = 'press',
+                    mode = 'Standard',
+                },
+            }
+        }
+        local prompt <const> = Prompts:Register(data, function(prompt, index, self)
+            if index == 2 then
+                if isOnDuty() then
+                    local isAnyPlayerClose <const> = getClosestPlayer()
+                    if not isAnyPlayerClose then
+                        TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
+                    else
+                        Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
+                    end
+                end
+            end
+
+            if index == 3 then
+                if isOnDuty() then
+                    OpenTeleportMenu(key)
+                end
+            end
+
+            if index == 1 then
+                local job <const> = LocalPlayer.state.Character.Job or LocalPlayer.state.Character.job
+                if Config.MedicJobs[job] then
+                    if isBoss() then
+                        OpenDoctorMenu() -- Hire/Fire
+                    else
+                        OpenMedicMenu() -- Duty/Teleports
+                    end
+                else
+                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
+                end
+            end
+        end, true) -- auto start on register
+
+        table.insert(prompts, prompt)
+    end
+end
+
+CreateThread(function()
+    repeat Wait(5000) until LocalPlayer.state.IsInSession
+    createBlips()
+
+    local hasJob <const> = getPlayerJob()
+    if not hasJob then return end
+
+    registerLocations()
+end)
+
+RegisterNetEvent("vorp_medic:Client:JobUpdate", function()
+    local hasJob = getPlayerJob()
+
+    -- lost job so destroy them
+    if not hasJob then
+        for _, value in pairs(prompts) do
+            value:Destroy()
+        end
+        table.wipe(prompts)
+        return
+    end
+
+    -- already exists no need to register or start them
+    if #prompts > 0 then
+        return
+    end
+
+    -- player was given the job
+    registerLocations()
+end)
 
 RegisterNetEvent("vorp_medic:Client:OpenMedicMenu", function()
     OpenMedicMenu()
@@ -406,4 +586,57 @@ RegisterNetEvent("vorp_medic:Client:RemoveBlip", function()
     blip:Remove()
     blip = 0
     ClearGpsMultiRoute()
+end)
+
+-- added to close menu on resource restart
+AddEventHandler("onResourceStop", function(resource)
+    if resource ~= GetCurrentResourceName() then return end
+    MenuData.CloseAll()
+end)
+
+RegisterNetEvent("vorp_medic:client:EmployeesList", function(employees, job)
+    EmployeesCache = {}
+    local elements = {}
+
+    if not employees or #employees == 0 then
+        table.insert(elements, { label = "No employees found", value = "none", desc = "" })
+    else
+        for _, e in ipairs(employees) do
+            EmployeesCache[tostring(e.charidentifier)] = e  -- збережемо все: job, jobgrade, ім'я тощо
+
+            local gradeNum  = tonumber(e.jobgrade or 0)
+            local gradeName = (Config.MedicJobs[e.job]
+                              and Config.MedicJobs[e.job].Ranks
+                              and Config.MedicJobs[e.job].Ranks[gradeNum]
+                              and Config.MedicJobs[e.job].Ranks[gradeNum].name)
+                              or ("Grade " .. tostring(gradeNum))
+            local status = e.onduty and "On-Duty" or "Off-Duty"
+
+            table.insert(elements, {
+                label = string.format("%s %s [%s]", e.firstname or "", e.lastname or "", gradeName),
+                value = tostring(e.charidentifier),  -- ключ для кешу
+                desc  = string.format("Job: %s | %s", e.job or "n/a", status),
+            })
+        end
+    end
+
+    table.insert(elements, { label = (T.Menu.Back or "Back"), value = "back", desc = (T.Menu.Back or "Back to job select") })
+
+    MenuData.Open("default", GetCurrentResourceName(), "OpenEmployeesList", {
+        title    = ("Employees: %s"):format(job or ""),
+        subtext  = "Select employee",
+        elements = elements,
+        align    = Config.Align,
+    }, function(data, menu)
+        if data.current.value == "back" then
+            menu.close()
+            return OpenEmployeesMenu()
+        end
+        if data.current.value ~= "none" then
+            menu.close()
+            OpenEmployeeActionsMenu(tostring(data.current.value), job)  -- передаємо charid як стрічку-ключ
+        end
+    end, function(_, menu)
+        menu.close()
+    end)
 end)
