@@ -596,13 +596,13 @@ end)
 
 RegisterNetEvent("vorp_medic:client:EmployeesList", function(employees, job)
     EmployeesCache = {}
-    local elements = {}
+    local elements <const> = {}
 
     if not employees or #employees == 0 then
-        table.insert(elements, { label = "No employees found", value = "none", desc = "" })
+        table.insert(elements, { label = T.Menu.NoEmployee, value = "none" })
     else
         for _, e in ipairs(employees) do
-            EmployeesCache[tostring(e.charidentifier)] = e  -- збережемо все: job, jobgrade, ім'я тощо
+            EmployeesCache[tostring(e.charidentifier)] = e -- save everything: job, jobgrade, name, etc
 
             local gradeNum  = tonumber(e.jobgrade or 0)
             local gradeName = (Config.MedicJobs[e.job]
@@ -614,19 +614,19 @@ RegisterNetEvent("vorp_medic:client:EmployeesList", function(employees, job)
 
             table.insert(elements, {
                 label = string.format("%s %s [%s]", e.firstname or "", e.lastname or "", gradeName),
-                value = tostring(e.charidentifier),  -- ключ для кешу
+                value = tostring(e.charidentifier), -- cache key
                 desc  = string.format("Job: %s | %s", e.job or "n/a", status),
             })
         end
     end
 
-    table.insert(elements, { label = (T.Menu.Back or "Back"), value = "back", desc = (T.Menu.Back or "Back to job select") })
+    table.insert(elements, { label = T.Menu.Back, value = "back", desc = T.Menu.Back })
 
     MenuData.Open("default", GetCurrentResourceName(), "OpenEmployeesList", {
-        title    = ("Employees: %s"):format(job or ""),
-        subtext  = "Select employee",
+        title = ("Employees: %s"):format(job or ""),
+        subtext = T.Menu.SelectEmployee,
         elements = elements,
-        align    = Config.Align,
+        align = Config.Align,
     }, function(data, menu)
         if data.current.value == "back" then
             menu.close()
@@ -634,7 +634,7 @@ RegisterNetEvent("vorp_medic:client:EmployeesList", function(employees, job)
         end
         if data.current.value ~= "none" then
             menu.close()
-            OpenEmployeeActionsMenu(tostring(data.current.value), job)  -- передаємо charid як стрічку-ключ
+            OpenEmployeeActionsMenu(tostring(data.current.value), job) -- pass charid as key string
         end
     end, function(_, menu)
         menu.close()
