@@ -14,30 +14,40 @@ Config.cancelalert = "cancelDoctorAlert" -- command to cancel alert
 Config.finishalert = "finishDoctorAlert" -- command to finish alert
 Config.DoctorMenuCommand = 'doctormenu'  -- Command to go on duty and teleport
 
--- add any job names here
-Config.MedicJobs = {
-    doctor = true,
-    headdoctor = true,
-    shaman = true,
-
-}
-
 Config.Keys = { -- prompts
     B = 0x4CC0E2FE
 }
 
--- jobs allowed to hire
-Config.JobLabels = {
-    doctor = "Doctor",
-    headdoctor = "Head Doctor",
-    shaman = "Shaman",
+Config.AllowBossSelfManage = false -- can the boss fire/change rank HIMSELF?
 
-}
-
--- jobs that can open hire menu
-Config.DoctorJobs = {
-    headdoctor = true,
-
+Config.MedicJobs = {
+    doctor = {
+        JobLabel = "Doctor",
+        Ranks = {
+            [0] = { name = 'Intern' },
+            [1] = { name = 'Nurse' },
+            [2] = { name = 'Deputy Doctor' },
+            [3] = { name = 'Doctor', Boss = false } -- can hire/fire
+        }
+    },
+    headdoctor = {
+        JobLabel = "Head Doctor",
+        Ranks = {
+            [0] = { name = 'Assistant' },
+            [1] = { name = 'Resident' },
+            [2] = { name = 'Deputy Head Doctor' },
+            [3] = { name = 'Head Doctor', Boss = true } -- can hire/fire
+        }
+    },
+    shaman = {
+        JobLabel = "Shaman",
+        Ranks = {
+            [0] = { name = 'Apprentice' },
+            [1] = { name = 'Healer' },
+            [2] = { name = 'Deputy Shaman' },
+            [3] = { name = 'Shaman', Boss = false } -- can hire/fire
+        }
+    },
 }
 
 -- if true storage for every doctor station will be shared if false they will be unique
@@ -108,7 +118,7 @@ Config.Stations = {
 
     Valentine = {
         Name = "Boss Menu",
-        Coords = vector3(-288.82, 808.44, 119.43),
+        Coords = vector3(-288.0849, 804.6372, 119.3860),
         Teleports = Config.Teleports,
         Storage = Config.Storage
     },
