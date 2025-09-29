@@ -46,6 +46,20 @@ local function isOnDuty(source)
     return DutyList[source]
 end
 
+-- new checker for job and grades
+local function _jobAndGrade(user)
+    local c = user.getUsedCharacter
+    return c and c.job, c and (c.jobgrade or c.jobGrade)
+end
+
+-- new checker for boss
+local function _canManageStaff(user)
+    local job, grade = _jobAndGrade(user)
+    local cfg = job and Config.MedicJobs[job]
+    local bossFlag = cfg and cfg.Ranks and cfg.Ranks[3] and cfg.Ranks[3].Boss == true
+    return bossFlag and tonumber(grade) == 3
+end
+
 local function isPlayerNear(source, target)
     local sourcePos <const> = GetEntityCoords(GetPlayerPed(source))
     local targetPos <const> = GetEntityCoords(GetPlayerPed(target))
@@ -150,7 +164,15 @@ RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
 
-    local label <const> = Config.JobLabels[job]
+    if not _canManageStaff(user) then
+        return Core.NotifyObjective(_source, T.Menu.CantHire, 5000)
+    end
+    if (not Config.AllowBossSelfManage) and tonumber(id) == _source then
+        return Core.NotifyObjective(_source, T.Menu.SelfManage, 5000)
+    end
+
+    local jobCfg = Config.MedicJobs[job]
+    local label <const> = jobCfg and jobCfg.JobLabel
     if not label then return print(T.Jobs.Nojoblabel) end
 
     local target <const> = id
@@ -195,6 +217,13 @@ RegisterNetEvent("vorp_medic:server:firePlayer", function(id)
 
     if not hasJob(user) then
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
+    end
+
+    if not _canManageStaff(user) then
+        return Core.NotifyObjective(_source, T.Menu.CantHire, 5000)
+    end
+    if (not Config.AllowBossSelfManage) and tonumber(id) == _source then
+        return Core.NotifyObjective(_source, T.Menu.SelfManage, 5000)
     end
 
     local target <const> = id
@@ -491,4 +520,182 @@ end)
 
 exports("getDoctorFromCall", function(source)
     return getDoctorFromCall(source)
+end)
+
+--* Hire/Fire Employees / database fetch
+local function db_fetch_all(sql, params, cb)
+    if not (exports.oxmysql and exports.oxmysql.execute) then
+        print("^1oxmysql not found (SELECT)^7")
+        return cb({})
+    end
+    exports.oxmysql:execute(sql, params or {}, function(rows)
+        cb(rows or {})
+    end)
+end
+
+local function db_execute(sql, params, cb)
+    if not (exports.oxmysql and exports.oxmysql.execute) then
+        print("^1oxmysql not found (UPDATE)^7")
+        if cb then cb(0) end
+        return
+    end
+    exports.oxmysql:execute(sql, params or {}, function(affected)
+        if cb then cb(affected or 0) end
+    end)
+end
+
+RegisterNetEvent("vorp_medic:server:listEmployeesAll", function(jobFilter)
+    local src = source
+    local user = Core.getUser(src); if not user then return end
+
+    if not _canManageStaff(user) then
+        return Core.NotifyObjective(src, T.Menu.CantSeeEmployees, 5000)
+    end
+    if not (jobFilter and Config.MedicJobs[jobFilter]) then
+        return Core.NotifyObjective(src, "Invalid job.", 5000)
+    end
+
+    local dutyByChar = {}
+    for _, sid in ipairs(GetPlayers()) do
+        local id = tonumber(sid)
+        local u = Core.getUser(id)
+        if u then
+            local c = u.getUsedCharacter
+            local cid = c and (c.charidentifier or c.charIdentifier)
+            if cid then
+                dutyByChar[tonumber(cid)] = (Player(id).state.isMedicDuty == true)
+            end
+        end
+    end
+
+    db_fetch_all(
+        "SELECT charidentifier, firstname, lastname, job, joblabel, jobgrade FROM characters WHERE job = ?",
+        { jobFilter },
+        function(rows)
+            local employees = {}
+            for _, r in ipairs(rows or {}) do
+                local cid = tonumber(r.charidentifier)
+                employees[#employees+1] = {
+                    charidentifier = cid,
+                    firstname = r.firstname,
+                    lastname = r.lastname,
+                    job = r.job,
+                    joblabel = r.joblabel,
+                    jobgrade = r.jobgrade or 0,
+                    onduty = dutyByChar[cid] == true,
+                }
+            end
+            TriggerClientEvent("vorp_medic:client:EmployeesList", src, employees, jobFilter)
+        end
+    )
+end)
+
+RegisterNetEvent("vorp_medic:server:fireByCharId", function(charid, jobFilter)
+    local src = source
+    local user = Core.getUser(src); if not user then return end
+    if not _canManageStaff(user) then
+        return Core.NotifyObjective(src, T.Menu.OnlySeniorFire, 5000)
+    end
+
+    local mycid = (user.getUsedCharacter.charidentifier or user.getUsedCharacter.charIdentifier)
+    if (not Config.AllowBossSelfManage) and tonumber(charid) == tonumber(mycid) then
+        return Core.NotifyObjective(src, T.Menu.SelfManage, 5000)
+    end
+
+    -- if the player is online — synchronously update the state and give him a notification
+    for _, sid in ipairs(GetPlayers()) do
+        local id = tonumber(sid)
+        local u = Core.getUser(id)
+        if u then
+            local c = u.getUsedCharacter
+            local cid = c and (c.charidentifier or c.charIdentifier)
+            if cid and tonumber(cid) == tonumber(charid) then
+                c.setJob("unemployed", true)
+                c.setJobLabel("Unemployed", true)
+                if Player(id).state.isMedicDuty then
+                    Player(id).state:set('isMedicDuty', nil, true)
+                end
+                Core.NotifyObjective(id, (T.Player and T.Player.BeenFireed), 5000)
+                break
+            end
+        end
+    end
+
+    db_execute(
+        "UPDATE characters SET job = ?, joblabel = ?, jobgrade = ? WHERE charidentifier = ? LIMIT 1",
+        { "unemployed", "Unemployed", 0, tonumber(charid) },
+        function(_)
+            Core.NotifyObjective(src, (T.Player and T.Player.FiredPlayer) or "Employee fired.", 5000)
+            -- immediately update the list in the menu if an active job filter is passed
+            if jobFilter and Config.MedicJobs[jobFilter] then
+                TriggerEvent("vorp_medic:server:listEmployeesAll", jobFilter)
+            end
+        end
+    )
+end)
+
+RegisterNetEvent("vorp_medic:server:setGradeByCharId", function(charid, newGrade)
+    local src = source
+    local user = Core.getUser(src); if not user then return end
+
+    if not _canManageStaff(user) then
+        return Core.NotifyObjective(src, T.Menu.OnlySeniorManage, 5000)
+    end
+    local mycid = (user.getUsedCharacter.charidentifier or user.getUsedCharacter.charIdentifier)
+    if (not Config.AllowBossSelfManage) and tonumber(charid) == tonumber(mycid) then
+        return Core.NotifyObjective(src, T.Menu.SelfManage, 5000)
+    end
+
+    newGrade = tonumber(newGrade or 0) or 0
+    if newGrade < 0 then newGrade = 0 end
+    if newGrade > 3 then newGrade = 3 end
+
+    db_fetch_all("SELECT charidentifier, firstname, lastname, job, joblabel, jobgrade FROM characters WHERE charidentifier = ? LIMIT 1",
+        { tonumber(charid) },
+        function(rows)
+            local r = rows and rows[1]; if not r then return Core.NotifyObjective(src, T.Menu.NoCharacter, 4000) end
+
+            local job = r.job
+            local jobCfg = Config.MedicJobs[job]
+            if not jobCfg then return Core.NotifyObjective(src, "Not a medic job.", 4000) end
+
+            local oldGrade = tonumber(r.jobgrade or 0)
+            local oldRank = (jobCfg.Ranks[oldGrade] and jobCfg.Ranks[oldGrade].name) or ("Grade " .. tostring(oldGrade))
+            local newRank = (jobCfg.Ranks[newGrade] and jobCfg.Ranks[newGrade].name) or ("Grade " .. tostring(newGrade))
+
+            local action = (newGrade > oldGrade) and "promoted" or ((newGrade < oldGrade) and "demoted" or "updated")
+            local msgBoss = ("You %s %s %s to %s"):format(action, r.firstname or "", r.lastname or "", newRank)
+            local msgTarget = (action == "promoted" and ("You have been promoted to: %s"):format(newRank))
+                           or (action == "demoted" and ("You have been demoted to: %s"):format(newRank))
+                           or ("Your rank was set to: %s"):format(newRank)
+
+            -- update online player (label) + notify him
+            local targetOnlineId
+            for _, sid in ipairs(GetPlayers()) do
+                local id = tonumber(sid)
+                local u = Core.getUser(id)
+                if u then
+                    local c = u.getUsedCharacter
+                    local cid = c and (c.charidentifier or c.charIdentifier)
+                    if cid and tonumber(cid) == tonumber(charid) then
+                        targetOnlineId = id
+                        if c.setJobLabel then
+                            c.setJobLabel(newRank, true)
+                        end
+                        Core.NotifyObjective(id, msgTarget, 5000)
+                        break
+                    end
+                end
+            end
+
+            -- write to the database
+            db_execute("UPDATE characters SET jobgrade = ?, joblabel = ? WHERE charidentifier = ? LIMIT 1",
+                { newGrade, newRank, tonumber(charid) },
+                function(a)
+                    Core.NotifyObjective(src, msgBoss, 5000)
+                    -- if the player is offline — at least the boss received confirmation
+                end
+            )
+        end
+    )
 end)
