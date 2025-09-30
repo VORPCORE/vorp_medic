@@ -74,6 +74,92 @@ local function createBlips()
     end
 end
 
+local function registerLocations()
+    for key, value in pairs(Config.Stations) do
+        local data = {
+            sleep = 800,
+            locations = {
+                { coords = value.Coords,                label = value.Name,                distance = 2.0 },
+                { coords = value.Storage[key].Coords,   label = value.Storage[key].Name,   distance = 1.5 },
+                { coords = value.Teleports[key].Coords, label = value.Teleports[key].Name, distance = 2.0 },
+            },
+            prompts = {
+                {
+                    type = T.Menu.Press,
+                    key = Config.Keys.B,
+                    label = 'press',
+                    mode = 'Standard',
+                },
+            }
+        }
+        local prompt <const> = Prompts:Register(data, function(prompt, index, self)
+            if index == 2 then
+                if isOnDuty() then
+                    local isAnyPlayerClose <const> = getClosestPlayer()
+                    if not isAnyPlayerClose then
+                        TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
+                    else
+                        Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
+                    end
+                end
+            end
+
+            if index == 3 then
+                if isOnDuty() then
+                    OpenTeleportMenu(key)
+                end
+            end
+
+            if index == 1 then
+                local job <const> = LocalPlayer.state.Character.Job or LocalPlayer.state.Character.job
+                if Config.MedicJobs[job] then
+                    if isBoss() then
+                        OpenDoctorMenu() -- Hire/Fire
+                    else
+                        OpenMedicMenu() -- Duty/Teleports
+                    end
+                else
+                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
+                end
+            end
+        end, true) -- auto start on register
+
+        table.insert(prompts, prompt)
+    end
+end
+
+
+RegisterNetEvent("vorp_medic:Client:JobUpdate", function()
+    local hasJob = getPlayerJob()
+
+    -- lost job so destroy them
+    if not hasJob then
+        for _, value in pairs(prompts) do
+            value:Destroy()
+        end
+        table.wipe(prompts)
+        return
+    end
+
+    -- already exists no need to register or start them
+    if #prompts > 0 then
+        return
+    end
+
+    -- player was given the job
+    registerLocations()
+end)
+
+CreateThread(function()
+    repeat Wait(5000) until LocalPlayer.state.IsInSession
+    createBlips()
+
+    local hasJob <const> = getPlayerJob()
+    if not hasJob then return end
+
+    registerLocations()
+end)
+
 function OpenDoctorMenu()
     MenuData.CloseAll()
 
@@ -288,7 +374,7 @@ function OpenTeleportMenu(location)
     end)
 end
 
-local function OpenMedicMenu()
+function OpenMedicMenu() -- changed from local to global to avoid refactor and allow calling in registerLocations
     MenuData.CloseAll()
     local isOnDuty <const> = LocalPlayer.state.isMedicDuty
     local label <const> = isOnDuty and T.Duty.OffDuty or T.Duty.OnDuty
@@ -427,91 +513,6 @@ function OpenEmployeeActionsMenu(charidKey, job)
         menu.close()
     end)
 end
-
-local function registerLocations()
-    for key, value in pairs(Config.Stations) do
-        local data = {
-            sleep = 800,
-            locations = {
-                { coords = value.Coords,                label = value.Name,                distance = 2.0 },
-                { coords = value.Storage[key].Coords,   label = value.Storage[key].Name,   distance = 1.5 },
-                { coords = value.Teleports[key].Coords, label = value.Teleports[key].Name, distance = 2.0 },
-            },
-            prompts = {
-                {
-                    type = T.Menu.Press,
-                    key = Config.Keys.B,
-                    label = 'press',
-                    mode = 'Standard',
-                },
-            }
-        }
-        local prompt <const> = Prompts:Register(data, function(prompt, index, self)
-            if index == 2 then
-                if isOnDuty() then
-                    local isAnyPlayerClose <const> = getClosestPlayer()
-                    if not isAnyPlayerClose then
-                        TriggerServerEvent("vorp_medic:Server:OpenStorage", key)
-                    else
-                        Core.NotifyObjective(T.Error.PlayerNearbyCantOpenInventory, 5000)
-                    end
-                end
-            end
-
-            if index == 3 then
-                if isOnDuty() then
-                    OpenTeleportMenu(key)
-                end
-            end
-
-            if index == 1 then
-                local job <const> = LocalPlayer.state.Character.Job or LocalPlayer.state.Character.job
-                if Config.MedicJobs[job] then
-                    if isBoss() then
-                        OpenDoctorMenu() -- Hire/Fire
-                    else
-                        OpenMedicMenu() -- Duty/Teleports
-                    end
-                else
-                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
-                end
-            end
-        end, true) -- auto start on register
-
-        table.insert(prompts, prompt)
-    end
-end
-
-CreateThread(function()
-    repeat Wait(5000) until LocalPlayer.state.IsInSession
-    createBlips()
-
-    local hasJob <const> = getPlayerJob()
-    if not hasJob then return end
-
-    registerLocations()
-end)
-
-RegisterNetEvent("vorp_medic:Client:JobUpdate", function()
-    local hasJob = getPlayerJob()
-
-    -- lost job so destroy them
-    if not hasJob then
-        for _, value in pairs(prompts) do
-            value:Destroy()
-        end
-        table.wipe(prompts)
-        return
-    end
-
-    -- already exists no need to register or start them
-    if #prompts > 0 then
-        return
-    end
-
-    -- player was given the job
-    registerLocations()
-end)
 
 RegisterNetEvent("vorp_medic:Client:OpenMedicMenu", function()
     OpenMedicMenu()
