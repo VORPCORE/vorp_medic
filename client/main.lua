@@ -92,14 +92,14 @@ local function registerLocations()
 
             if index == 3 then
                 if isOnDuty() then
-                    OpenTeleportMenu(key)
+                    OpenTeleportMenu(key, true)
                 end
             end
 
             if index == 1 then
                 local job <const> = LocalPlayer.state.Character.Job
                 if Config.MedicJobs[job] then
-                    OpenDoctorMenu()
+                    OpenDoctorMenu(true)
                 else
                     Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
                 end
@@ -142,18 +142,18 @@ CreateThread(function()
     registerLocations()
 end)
 
-function OpenDoctorMenu()
+function OpenDoctorMenu(soundOpen)
     MenuData.CloseAll()
     local elements <const> = {
         {
             label = T.Menu.HirePlayer,
             value = "hire",
-            desc = T.Menu.HirePlayer .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+            desc = T.Menu.HirePlayer
         },
         {
             label = T.Menu.FirePlayer,
             value = "fire",
-            desc = T.Menu.FirePlayer .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+            desc = T.Menu.FirePlayer
         }
     }
 
@@ -162,6 +162,12 @@ function OpenDoctorMenu()
         subtext = T.Menu.HireFireMenu,
         align = Config.Align,
         elements = elements,
+        soundOpen = soundOpen,
+        hideRadar = true,
+        divider = true,
+        fixedHeight = true,
+        itemHeight = "4vh",
+        skipOpenEvent = not soundOpen,
 
     }, function(data, _)
         if data.current.value == "hire" then
@@ -189,7 +195,7 @@ function OpenDoctorMenu()
             end
         end
     end, function(_, menu)
-        menu.close()
+        menu.close(true, true)
     end)
 end
 
@@ -205,14 +211,20 @@ function OpenHireMenu()
         subtext = T.Menu.SubMenu,
         elements = elements,
         align = Config.Align,
-        lastmenu = "OpenDoctorMenu"
+        lastmenu = "OpenDoctorMenu",
+        soundOpen = false,
+        hideRadar = true,
+        divider = true,
+        fixedHeight = true,
+        itemHeight = "4vh",
+        skipOpenEvent = true,
 
     }, function(data, menu)
         if (data.current == "backup") then
-            return _G[data.trigger]()
+            return _G[data.trigger](false)
         end
 
-        menu.close()
+        menu.close(true, true, true)
         local MyInput <const> = {
             type = "enableinput",
             inputType = "input",
@@ -233,12 +245,10 @@ function OpenHireMenu()
         if res and res > 0 then
             TriggerServerEvent("vorp_medic:server:hirePlayer", res, data.current.value)
         end
-    end, function(_, menu)
-        menu.close()
     end)
 end
 
-function OpenTeleportMenu(location)
+function OpenTeleportMenu(location, soundOpen)
     MenuData.CloseAll()
     local elements = {}
     for key, value in pairs(Config.Teleports) do
@@ -264,9 +274,15 @@ function OpenTeleportMenu(location)
         subtext = T.Menu.SubMenu,
         align = Config.Align,
         elements = elements,
+        soundOpen = soundOpen,
+        hideRadar = true,
+        divider = true,
+        fixedHeight = true,
+        itemHeight = "4vh",
+        skipOpenEvent = not soundOpen,
 
     }, function(data, menu)
-        menu.close()
+        menu.close(true, true, true)
         local coords <const> = Config.Teleports[data.current.value].Coords
         DoScreenFadeOut(1000)
         repeat Wait(0) until IsScreenFadedOut()
@@ -276,7 +292,7 @@ function OpenTeleportMenu(location)
         DoScreenFadeIn(1000)
         repeat Wait(0) until IsScreenFadedIn()
     end, function(_, menu)
-        menu.close()
+        menu.close(true, true)
     end)
 end
 
@@ -285,19 +301,22 @@ local function OpenMedicMenu()
     local isONduty <const> = LocalPlayer.state.isMedicDuty
     local label <const> = isONduty and T.Duty.OffDuty or T.Duty.OnDuty
     local desc <const> = isONduty and T.Duty.GoOffDuty or T.Duty.GoOnDuty
+    local dutyLabel <const> = isONduty and "go off duty" or "go on duty"
     local elements <const> = {
         {
-            label = label,
+            label = label .. "<br><span style='opacity:0.6;'>" .. dutyLabel .. "</span>",
             value = "duty",
-            desc = desc .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+            desc = desc,
+            footerText = "press enter",
         }
     }
 
     if Config.UseTeleportsMenu then
         table.insert(elements, {
-            label = T.Teleport.TeleportTo,
+            label = T.Teleport.TeleportTo .. "<br><span style='opacity:0.6;'>" .. "teleport options" .. "</span>",
             value = "teleports",
-            desc = T.Teleport.TeleportToDifferentLocations .. "<br><br><br><br><br><br><br><br><br><br><br><br>"
+            desc = T.Teleport.TeleportToDifferentLocations,
+            footerText = "press enter",
         })
     end
 
@@ -306,6 +325,12 @@ local function OpenMedicMenu()
         subtext = T.Menu.SubMenu,
         align = Config.Align,
         elements = elements,
+        soundOpen = true,
+        hideRadar = true,
+        divider = true,
+        fixedHeight = true,
+        itemHeight = "4vh",
+        skipOpenEvent = false,
 
     }, function(data, menu)
         if data.current.value == "teleports" then
@@ -317,10 +342,10 @@ local function OpenMedicMenu()
             else
                 Core.NotifyObjective(T.Duty.YouAreNotOnDuty, 5000)
             end
-            menu.close()
+            menu.close(true, true, true)
         end
     end, function(_, menu)
-        menu.close()
+        menu.close(true, true)
     end)
 end
 
