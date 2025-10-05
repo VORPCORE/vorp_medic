@@ -1,3 +1,7 @@
+<0.3>
+- added vorp_lib support
+- added vorp_menu features to the menus
+- small fixes and features
 <0.2>
 - added webhooks
 - added translation file
