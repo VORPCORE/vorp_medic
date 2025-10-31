@@ -14,30 +14,24 @@ Config.cancelalert = "cancelDoctorAlert" -- command to cancel alert
 Config.finishalert = "finishDoctorAlert" -- command to finish alert
 Config.DoctorMenuCommand = 'doctormenu'  -- Command to go on duty and teleport
 
--- add any job names here
-Config.MedicJobs = {
-    doctor = true,
-    headdoctor = true,
-    shaman = true,
-
-}
 
 Config.Keys = { -- prompts
     B = 0x4CC0E2FE
 }
 
--- jobs allowed to hire
-Config.JobLabels = {
-    doctor = "Doctor",
-    headdoctor = "Head Doctor",
-    shaman = "Shaman",
-
-}
 
 -- jobs that can open hire menu
 Config.DoctorJobs = {
-    headdoctor = true,
-
+    doctor = {
+        [0] = {
+            label = "Doctor",
+            allowAll = true, -- allows all
+        },
+        [1] = {
+            label = "Nurse",
+            CanHire = false, -- can hire players?
+        },
+    }
 }
 
 -- if true storage for every doctor station will be shared if false they will be unique

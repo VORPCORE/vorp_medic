@@ -35,7 +35,7 @@ end
 
 local function getPlayerJob()
     local job <const> = LocalPlayer.state.Character.Job
-    return Config.MedicJobs[job]
+    return Config.DoctorJobs[job]
 end
 
 local function isOnDuty()
@@ -97,8 +97,9 @@ local function registerLocations()
             end
 
             if index == 1 then
-                local job <const> = LocalPlayer.state.Character.Job
-                if Config.MedicJobs[job] then
+                local grade <const> = LocalPlayer.state.Character.Grade
+                local v <const> = getPlayerJob()?[grade]
+                if v and (v.allowAll or v.CanHire) then
                     OpenDoctorMenu(true)
                 else
                     Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
@@ -202,8 +203,15 @@ end
 function OpenHireMenu()
     MenuData.CloseAll()
     local elements <const> = {}
-    for key, _ in pairs(Config.MedicJobs) do
-        table.insert(elements, { label = T.Jobs.Job .. ": " .. key, value = key, desc = T.Jobs.Job .. key })
+    for key, value in pairs(Config.DoctorJobs) do
+        for grade, v in pairs(value) do
+            table.insert(elements, {
+                label = T.Jobs.Job .. ": " .. v.label,
+                value = key,
+                grade = grade,
+                desc = T.Jobs.Job .. v.label
+            })
+        end
     end
 
     MenuData.Open("default", GetCurrentResourceName(), "OpenHireFireMenu", {
@@ -243,7 +251,7 @@ function OpenHireMenu()
         local res             = exports.vorp_inputs:advancedInput(MyInput)
         res                   = tonumber(res)
         if res and res > 0 then
-            TriggerServerEvent("vorp_medic:server:hirePlayer", res, data.current.value)
+            TriggerServerEvent("vorp_medic:server:hirePlayer", res, data.current.value, data.current.grade)
         end
     end)
 end

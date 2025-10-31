@@ -39,7 +39,7 @@ end
 
 local function hasJob(user)
     local Character <const> = user.getUsedCharacter
-    return Config.MedicJobs[Character.job]
+    return Config.DoctorJobs[Character.job]
 end
 
 local function isOnDuty(source)
@@ -135,23 +135,22 @@ end)
 --* ON PLAYER SPAWN
 AddEventHandler("vorp:SelectedCharacter", function(source, char)
     if Config.DevMode then return end
-    if not Config.MedicJobs[char.job] then return end
+    if not Config.DoctorJobs[char.job] then return end
     TriggerClientEvent("chat:addSuggestion", source, "/" .. Config.DoctorMenuCommand, T.Menu.OpenDoctorMenu, {})
     RegisterCommand(Config.DoctorMenuCommand, openDoctorMenu, false)
 end)
 
 --* HIRE PLAYER
-RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
+RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job, grade)
     local _source <const> = source
     local user <const> = Core.getUser(_source)
     if not user then return end
-
-    if not hasJob(user) then
+    local Character <const> = user.getUsedCharacter
+    local jobGrade <const> = Character.jobGrade
+    local v <const> = hasJob(user)?[jobGrade]
+    if not v or not (v.allowAll or v.CanHire) then
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
-
-    local label <const> = Config.JobLabels[job]
-    if not label then return print(T.Jobs.Nojoblabel) end
 
     local target <const> = id
     local targetUser <const> = Core.getUser(target)
@@ -159,6 +158,10 @@ RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
 
     local targetCharacter <const> = targetUser.getUsedCharacter
     local targetJob <const> = targetCharacter.job
+
+    local label <const> = Config.DoctorJobs[job]?[grade]?.label
+    if not label then return print(T.Jobs.Nojoblabel) end
+
     if job == targetJob then
         return Core.NotifyObjective(_source, T.Player.PlayeAlreadyHired .. label, 5000)
     end
@@ -168,6 +171,7 @@ RegisterNetEvent("vorp_medic:server:hirePlayer", function(id, job)
     end
 
     targetCharacter.setJob(job, true)
+    targetCharacter.setJobGrade(grade, true)
     targetCharacter.setJobLabel(label, true)
 
     Core.NotifyObjective(target, T.Player.HireedPlayer .. label, 5000)
@@ -193,7 +197,10 @@ RegisterNetEvent("vorp_medic:server:firePlayer", function(id)
     local user <const> = Core.getUser(_source)
     if not user then return end
 
-    if not hasJob(user) then
+    local Character <const> = user.getUsedCharacter
+    local jobGrade <const> = Character.jobGrade
+    local v <const> = hasJob(user)?[jobGrade]
+    if not v or not (v.allowAll or v.CanHire) then
         return Core.NotifyObjective(_source, T.Jobs.YouAreNotADoctor, 5000)
     end
 
@@ -203,11 +210,12 @@ RegisterNetEvent("vorp_medic:server:firePlayer", function(id)
 
     local targetCharacter <const> = targetUser.getUsedCharacter
     local targetJob <const> = targetCharacter.job
-    if not Config.MedicJobs[targetJob] then
+    if hasJob(targetUser) then
         return Core.NotifyObjective(_source, T.Player.CantFirenotHired, 5000)
     end
 
     targetCharacter.setJob("unemployed", true)
+    targetCharacter.setJobGrade(0, true)
     targetCharacter.setJobLabel("Unemployed", true)
 
     Core.NotifyObjective(target, T.Player.BeenFireed, 5000)
@@ -272,7 +280,7 @@ end)
 
 --* ON PLAYER JOB CHANGE
 AddEventHandler("vorp:playerJobChange", function(source, new, _)
-    if not Config.MedicJobs[new] then return end
+    if not Config.DoctorJobs[new] then return end
     TriggerClientEvent("vorp_medic:Client:JobUpdate", source)
 end)
 
@@ -484,7 +492,7 @@ AddEventHandler("playerDropped", function()
 end)
 
 --* EXPORTS
--- ADD TO READ ME
+--TODO: ADD TO READ ME
 exports("isOnDuty", function(source)
     return DutyList[source]
 end)
