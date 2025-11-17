@@ -109,7 +109,7 @@ local function registerLocations()
                 if v and (v.allowAll or v.CanHire) then
                     OpenDoctorMenu(true)
                 else
-                    Core.NotifyObjective(T.Error.OnlyDoctorsCanOpenMenu, 5000)
+                    Core.NotifyObjective(T.Error.OnlyDoctorOpenMenu, 5000)
                 end
             end
         end, true) -- auto start on register
