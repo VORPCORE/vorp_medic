@@ -322,7 +322,7 @@ local function OpenMedicMenu()
             label = label .. "<br><span style='opacity:0.6;'>" .. dutyLabel .. "</span>",
             value = "duty",
             desc = desc,
-            footerText = "press enter",
+            footerText = T.PressEnter,
         }
     }
 
@@ -331,7 +331,7 @@ local function OpenMedicMenu()
             label = T.Teleport.TeleportTo .. "<br><span style='opacity:0.6;'>" .. "teleport options" .. "</span>",
             value = "teleports",
             desc = T.Teleport.TeleportToDifferentLocations,
-            footerText = "press enter",
+            footerText = T.PressEnter,
         })
     end
 

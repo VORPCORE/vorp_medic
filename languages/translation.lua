@@ -13,6 +13,7 @@ Translation.Langs = {
             OpenDoctorMenu = "Open Doctor Menu",
             Press = "Press",
             SubMenu = "SubMenu",
+            PressEnter = "Press Enter",
         },
         Teleport = {
             TeleportTo = "Teleport to",
@@ -77,6 +78,7 @@ Translation.Langs = {
             OpenDoctorMenu = "Abrir Menú de Doctor",
             Press = "Presionar",
             SubMenu = "SubMenú",
+            PressEnter = "Presiona Enter",
         },
         Teleport = {
             TeleportTo = "Teletransportarse a",
