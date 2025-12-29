@@ -18,7 +18,7 @@ local GetPlayerPed <const>     = GetPlayerPed
 
 local function getClosestPlayer()
     local players <const> = GetActivePlayers()
-    local coords <const> = GetEntityCoords(PlayerPedId())
+    local coords <const> = GetEntityCoords(CACHE.Ped)
 
     for _, value in ipairs(players) do
         if PlayerId() ~= value then
@@ -302,8 +302,8 @@ function OpenTeleportMenu(location, soundOpen)
         DoScreenFadeOut(1000)
         repeat Wait(0) until IsScreenFadedOut()
         RequestCollisionAtCoord(coords.x, coords.y, coords.z)
-        SetEntityCoords(PlayerPedId(), coords.x, coords.y, coords.z, false, false, false, false)
-        repeat Wait(0) until HasCollisionLoadedAroundEntity(PlayerPedId()) == 1
+        SetEntityCoords(CACHE.Ped, coords.x, coords.y, coords.z, false, false, false, false)
+        repeat Wait(0) until HasCollisionLoadedAroundEntity(CACHE.Ped) == 1
         DoScreenFadeIn(1000)
         repeat Wait(0) until IsScreenFadedIn()
     end, function(_, menu)
@@ -365,7 +365,7 @@ local function OpenMedicMenu()
 end
 
 local function playAnimation(dict, anim)
-    local ped <const> = PlayerPedId()
+    local ped <const> = CACHE.Ped
     if not HasAnimDictLoaded(dict) then
         RequestAnimDict(dict)
         repeat Wait(0) until HasAnimDictLoaded(dict)
@@ -386,8 +386,8 @@ RegisterNetEvent("vorp_medic:Client:ReviveAnim", function()
 end)
 
 RegisterNetEvent("vorp_medic:Client:HealPlayer", function(health, stamina)
-    local ped <const> = PlayerPedId()
-    local player <const> = PlayerId()
+    local ped <const> = CACHE.Ped
+    local player <const> = CACHE.Player
     if health and health > 0 then
         local inner <const> = GetAttributeCoreValue(ped, 0)
         local outter <const> = math.floor(GetPlayerHealth(player)) + 100
@@ -428,7 +428,7 @@ RegisterNetEvent("vorp_medic:Client:AlertDoctor", function(targetCoords)
     StartGpsMultiRoute(joaat("COLOR_RED"), true, true)
     AddPointToGpsMultiRoute(targetCoords.x, targetCoords.y, targetCoords.z, false)
     SetGpsMultiRouteRender(true)
-    local ped <const> = PlayerPedId()
+    local ped <const> = CACHE.Ped
     repeat Wait(1000) until #(GetEntityCoords(ped) - targetCoords) < 15.0 or blip == 0
 
     if blip ~= 0 then
