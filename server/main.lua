@@ -311,6 +311,23 @@ local function getClosestPlayer(source, isHeal)
 end
 
 CreateThread(function()
+    if Core.RegisterJobs then
+        local jobsData <const> = {}
+        for job, value in pairs(Config.DoctorJobs) do
+            jobsData[job] = {}
+            -- only if grades are used
+            jobsData[job].grades = {}
+            for grade, v in pairs(value) do
+                jobsData[job].grades[grade] = {}
+                jobsData[job].grades[grade].label = v.label
+            end
+        end
+        Core.RegisterJobs(jobsData, GetCurrentResourceName())
+    else
+        -- wait for some time to print this
+        -- print("^1vorp_medic: server: RegisterJobs not found update vorp core to the latest version^7")
+    end
+
     for key, value in pairs(Config.Items) do
         Inv:registerUsableItem(key, function(data)
             local _source <const> = data.source
